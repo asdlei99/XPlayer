@@ -1,0 +1,14 @@
+prefix=/home/cadaqs/Desktop/ttt/inst/
+exec_prefix=${prefix}
+libdir=/home/cadaqs/Desktop/ttt/inst//lib
+includedir=/home/cadaqs/Desktop/ttt/inst//include
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 56.26.100
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavutil 
+Libs.private: -pthread -lm
+Cflags: -I${includedir}

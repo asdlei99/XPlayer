@@ -1,0 +1,14 @@
+prefix=/home/cadaqs/Desktop/ttt/inst/
+exec_prefix=${prefix}
+libdir=/home/cadaqs/Desktop/ttt/inst//lib
+includedir=/home/cadaqs/Desktop/ttt/inst//include
+
+Name: libavformat
+Description: FFmpeg container format library
+Version: 58.26.100
+Requires: 
+Requires.private: libavcodec >= 58.46.100, libswresample >= 3.4.100, libavutil >= 56.26.100
+Conflicts:
+Libs: -L${libdir}  -lavformat 
+Libs.private: -lm -L/usr/local/lib -lz
+Cflags: -I${includedir}

@@ -1,0 +1,11 @@
+LIBRARY codec.dll
+
+EXPORTS
+audio_create
+audio_writeData
+audio_play
+audio_stop
+audio_pause
+audio_cleanup
+audio_destroy
+audio_getPosition

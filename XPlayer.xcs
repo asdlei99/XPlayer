@@ -1,0 +1,348 @@
+// xlang
+
+using {
+	FileStream ; 
+    FileSystem ;
+};
+
+class MainDialog : QXDialog{
+
+	QXPushButton btnOk, btnLeft, btnRight, btnHide, btnStop, btnSetting;
+    QXLabel labStatus;
+	XVideoSurface surface = new XVideoSurface();
+	Setting setdlg = new Setting();
+    
+    MediaBuffer mb = new MediaBuffer();
+    
+	AVCodeC codec = new AVCodeC(mb);
+    
+    ControlPane pane = new ControlPane();
+	//wdgControl
+    QXTreeView treeWidget;
+
+	JsonObject actlist;
+    
+    String szduration;
+    
+    bool bStop = true;
+    
+    QXWidget  qcontrol;
+        
+	onKeyEventListener keylistener = new onKeyEventListener(){
+    
+    
+    
+		bool onKeyPress(QXObject obj,int key,bool repeat,int count,String text,int scanCode,int virtualKey)override{
+			if (key == Key_Left){
+				codec.seek(mb.getPosition() - 5000);
+            }else
+			if (key == Key_Right){
+				codec.seek(mb.getPosition() + 5000);
+            }else
+            if (key == Key_Space){
+				if (obj == btnOk || obj == btnLeft || obj == btnRight){
+					return true;
+                }
+            }
+			return true;
+		}
+    };
+    
+    
+    
+    Map<long, String> urisMap = new Map<long, String>();
+    
+    void loadAct(){
+		File fp = new File(_system_.getAppDirectory().appendPath("actlist.cfg"));
+        try{
+			FileInputStream fis = new FileInputStream(fp);
+            byte [] data = fis.read();
+            String content = new String(data) ;
+            
+            actlist = new JsonObject(content);
+            
+            JsonArray list = (JsonArray)actlist.get("list");
+            
+            long root = treeWidget.addItem(nilptr,"节目表");
+            
+            for (int i =0; i < list.length(); i++){
+				JsonObject item = (JsonObject)list.get(i);
+                long hitem = treeWidget.insertItem(root,nilptr,item.getString("name"));
+                
+                JsonArray jcontent = (JsonArray)item.get("content");
+                
+                for (int x = 0; x < jcontent.length(); x++){
+					JsonObject act = (JsonObject)jcontent.get(x);
+					long hsub = treeWidget.insertItem(hitem,nilptr,act.getString("label"));
+                    urisMap.put(hsub, act.getString("uri"));
+                }
+                
+            }
+        }catch(Exception e){
+        
+        
+        }
+        
+    }
+    
+     String formatTime(long ms){
+		int h = (ms / (1000 * 60 * 60));
+        int m = ((ms %(1000 * 60 * 60)) / (1000 * 60));
+        int s = ((ms %(1000 * 60)) / (1000));
+		return String.format("%d:%02d:%02d", h, m, s);
+     }
+    
+    XVideoSurface.playProgressListener playStatusListener = new XVideoSurface.playProgressListener(){
+		long lastpos = 0;
+		void onProgress(long pos, long duration){
+			pos = ((int)(pos / 1000)) * 1000;
+            if (pos != lastpos){
+				lastpos = pos;
+				pane.setPosition(pos);
+				runOnUi(new Runnable(){
+					void run()override{
+						if (bStop == false){
+							labStatus.setText(formatTime(pos) + "/" + szduration);
+						}
+					}            
+				});
+            }
+		}
+    };
+    
+    void setRenderSetting(int n){
+		surface.setRenderSetting(n);
+    }
+    
+	bool create()override{
+		QXBuffer qb = new QXBuffer();
+        byte [] buffer = __xPackageResource("ui/dialog.ui");
+        qb.setBuffer(buffer, 0, buffer.length);
+        
+		if (load(qb)){
+			
+			setWindowFlags(Window);
+            setWindowIcon("./res/toolbar/logo.png");
+            btnStop = (QXPushButton)attachByName(new QXPushButton(), "btnStop");
+			btnOk = (QXPushButton)attachByName(new QXPushButton(), "btnOk");
+            btnLeft = (QXPushButton)attachByName(new QXPushButton(), "btnLeft");
+            btnRight = (QXPushButton)attachByName(new QXPushButton(), "btnRight");
+            btnSetting = (QXPushButton)attachByName(new QXPushButton(), "btnSetting");
+            btnHide = (QXPushButton)attachByName(new QXPushButton(), "btnHide");
+            treeWidget = (QXTreeView)attachByName(new QXTreeView(), "treeWidget");
+            labStatus = (QXLabel)attachByName(new QXLabel(), "labStatus");
+
+            qcontrol = (QXWidget)attachByName(new QXWidget(), "qcontrol"); 
+            //widTitle = (QXWidget)attachByName(new QXWidget(), "widTitle");
+            
+            /*qcontrol.hide();
+            widTitle.hide();*/
+			attachByName(surface, "surface");
+            attachByName(pane, "wdgControl");
+            treeWidget.hide();
+            pane.init();
+            
+            /*surface.create(this);
+                        
+            surface.move(0,0);
+            surface.show();*/
+            btnOk.move(560,0);
+            
+            setOnKeyEventListener(keylistener);
+            btnOk.setOnKeyEventListener(keylistener);
+            btnLeft.setOnKeyEventListener(keylistener);
+            btnRight.setOnKeyEventListener(keylistener);
+            surface.setOnKeyEventListener(keylistener);
+            
+            mb.config(1500, surface.getPlayer());
+            
+			btnOk.setOnClickListener(new onClickListener(){
+				void onClick(QXObject obj, bool checked)override{
+					String file = new String("http://cctvtxyh5c.liveplay.myqcloud.com/wstv/liaoning_2/index.m3u8".getBytes("GB18030"));
+                    //setWindowTitle("D:\\Cadaqs\\Desktop\\7500-航班2014.hd.rmvb，http://cctvalih5c.v.myalicdn.com/live/cctv1_1/index.m3u8");
+					openMedia(file);
+				}
+			});
+            
+            btnSetting.setOnClickListener(new onClickListener(){
+				void onClick(QXObject obj, bool checked)override{
+					/*QPoint pt = mapToGlobal(width() - 120,height() - 150);
+					setdlg.show(pt.x,pt.y);*/
+                    
+                    setdlg.show(width() - 120,height() - 150);
+				}
+			});
+            
+            btnStop.setOnClickListener(new onClickListener(){
+				void onClick(QXObject obj, bool checked)override{
+					if (bStop == false){
+						
+						synchronized(MainDialog.this){
+							bStop = true;
+                            labStatus.setText("正在停止...");
+                            
+                            surface.stop();
+                            mb.stop();
+                            
+                            codec.stop();
+                            
+                            pane.stop();
+							MainDialog.this.notify();
+							MainDialog.this.wait();
+						}
+						
+                        labStatus.setText("已停止");
+                        pane.setPosition(0);
+                    }
+				}
+			});
+            
+            btnHide.setOnClickListener(new onClickListener(){
+				void onClick(QXObject obj, bool checked)override{
+					if (treeWidget.isHidden()){
+						treeWidget.show();
+                        btnHide.setText("<");
+                    }else{
+						treeWidget.hide();
+                        btnHide.setText(">");
+                    }
+				}
+			});
+            
+			btnLeft.setOnClickListener(new onClickListener(){
+				void onClick(QXObject obj, bool checked)override{
+					codec.seek(mb.getPosition() - 10000);
+				}
+			});
+            
+			btnRight.setOnClickListener(new onClickListener(){
+				void onClick(QXObject obj, bool checked)override{
+					codec.seek(mb.getPosition() + 10000);
+				}
+			});
+            
+            surface.setDragListener( new XVideoSurface.DropListener(){
+				void onDrag(String file){
+					openMedia(file);
+				}
+			});
+            
+            /*new Timer().schedule(new TimerTask(){
+				void run()override{
+					pane.setPosition(codec.getPosition());
+                }
+            },1000,-1);*/
+            
+            
+            treeWidget.setOnTreeViewItemEvent(new onTreeViewItemEvent(){
+               void onItemDoubleClicked(QXTreeView,long item, int column)override{
+					try{
+						String url = urisMap.get(item);
+                        
+                        url = url.replace("%(tempstamp)", "" + (_system_.currentTimeMillis() / 1000));
+                        openMedia(url);
+                    }catch(Exception e){
+                    
+                    }
+				}     
+            });
+            
+            labStatus.setText("加载节目...");
+            
+            loadAct();
+            
+            setdlg.create(this);
+            setdlg.hide();
+            labStatus.setText("就绪");
+            return true;
+		}
+        return false;
+	}
+
+
+    
+
+    
+    void setStatus(int s){
+		runOnUi(new Runnable(){
+			void run()override{
+            
+				switch(s){
+					case 0:
+					case -1:
+                    labStatus.setText("加载失败");
+                    break;
+					case 1:
+                    labStatus.setText("正在缓冲...");
+                    break;
+                    case 2:
+                    labStatus.setText("播放中");
+                    break;
+                }
+			}
+		});
+    }
+    void openMedia(String uri){
+		if (bStop == true){
+			new Thread(){
+				void run()override{
+					bStop = false;
+					setName("Decoder");
+					setStatus(1);
+					
+					if (codec.open(uri)){
+					
+						mb.create();
+						//surface.resize(codec.getWidth(),codec.getHeight());
+						long duration = codec.getDuration();
+						szduration = formatTime(duration);
+                        
+						if (codec.prepare()){
+							pane.config(uri, duration, codec);
+							surface.setParameter(codec.getFps(),duration , codec.getWidth(),codec.getHeight(), codec.hasAudio(), codec.hasVideo(), playStatusListener);
+							surface.startPlay();
+							setStatus(2);
+							codec.decode();
+						}
+					}else{
+						bStop = true;
+						setStatus(0);
+					}
+                    
+                    synchronized(MainDialog.this){
+						MainDialog.this.notify();
+                    }
+				}
+			}.start();
+        }
+    }
+};
+
+
+class XMyApp : QXApplication {
+
+	MainDialog dialog;
+	
+
+    bool create(){
+        if (super.createQXApplication()){
+            dialog = new MainDialog();
+            if (dialog.create()){
+				setStyleSheet("./res/qss/black.qss");
+				dialog.show();
+                return true;
+            }
+        }
+        return false;
+    }
+    
+};
+
+
+int main(String [] args){
+	XMyApp app = new XMyApp();
+    if (app.create()){
+		app.run();
+    }
+	return 0;
+}

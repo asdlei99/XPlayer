@@ -1,0 +1,428 @@
+//xlang Source, Name:XVideoSurface.xcsm 
+//Date: Mon Jan 23:57:59 2019 
+
+
+class XVideoSurface : QXWidget{
+
+	class Frame{
+		Frame(byte[] d, long t, bool b){
+			data = d;
+            timemillis = t;
+            bVideo = b;
+        }
+        
+		byte[] data;
+        long timemillis;
+        bool bVideo;
+    };
+    
+	interface DropListener{
+		void onDrag(String file);
+    };
+    
+    interface playProgressListener{
+		void onProgress(long pos, long duration);
+    };
+    
+    class Player : AVCodeC.IPlayerCallback{
+		void writeVideoData(byte [] data, int length, long timemillis)override{
+			sendBuffer(data, length, timemillis, true);
+        }
+        void writeAudioData(byte [] data, int length, long timemillis)override{
+			sendBuffer(data, length, timemillis, false);
+        }
+        bool isNeedBuffer()override{
+			return (video_framelist.size() == 0) && (audio_framelist.size() == 0);
+        }
+        void stop(){
+			XVideoSurface.this.stop();
+        }
+        bool create(){
+			return XVideoSurface.this.createPlayer();
+        }
+        long getPosition(){
+			return current_millis;
+        }
+        void flush(){
+			synchronized(audio_framelist){
+				synchronized(video_framelist){
+					video_framelist.clear();
+                    audio_framelist.clear();
+                    clear();
+                    video_framelist.notify();
+                    audio_framelist.notify();
+				}
+            }
+        }
+        bool seek(long pos)override{
+			resetPosition(pos);
+            return true;
+		}  
+    };
+    
+	 List<Frame> video_framelist = new List<Frame>();
+     List<Frame> audio_framelist = new List<Frame>();
+     DropListener drag = nilptr;
+     playProgressListener ppl;
+     
+     
+     bool bclear = false;
+     bool bStop = true;
+     int v_width, v_height;
+     long correct_ms = 0;
+     
+     int fps = 0;
+     int frametime = 0;
+     long duration = 0;
+     bool dynamicfps = false;
+     
+     int nRenderSetting = 0;
+     
+     bool bhasVideo ,bhasAudio;
+     
+     AudioOut player ;
+     
+     Frame current_data = nilptr;
+     long current_millis = 0;
+     
+     
+     void resetPosition(int pos){
+		bclear = false;
+        current_millis = pos;
+     }
+     
+     void clear(){
+		bclear = true;
+     }
+     
+
+     
+	 void onPaint(int l,int t, int r,int b, long hpaint) override{
+		QXPainter painter = new QXPainter(hpaint);  
+         
+        Frame imgdata = current_data;  
+        
+        if (imgdata != nilptr){
+			
+			QXImage image = new QXImage(imgdata.data, v_width, v_height, QXImage.Format_ARGB32);
+			//painter.drawImage(image, 0, 0);
+            
+            switch(nRenderSetting){
+                case 1:
+                {
+					double ww = width();
+					double wh = height();
+					
+					ww /= (double)v_width;
+					wh /= (double)v_height;
+					
+					if (ww < wh){
+						//以宽为准
+						int nh = v_height * ww;
+						painter.drawImage(image,new QXRect(0, (height() - nh) / 2, width(), nh),new QXRect(0, 0, v_width, v_height),QXPainter.CompositionMode.CompositionMode_Source);
+					}else{
+						//以高为准
+						int nh = v_width * wh;
+						painter.drawImage(image,new QXRect((width() - nh) / 2, 0, v_width * wh, height()),new QXRect(0, 0, v_width, v_height),QXPainter.CompositionMode.CompositionMode_Source);
+					}
+					
+                }
+                break;
+                case 2:
+                {
+					painter.drawImage(image,new QXRect((width() - v_width) / 2, (height() - v_height) / 2, v_width, v_height),new QXRect(0, 0, v_width, v_height),QXPainter.CompositionMode.CompositionMode_Source);
+                }
+                break;
+                default:
+                painter.drawImage(image,new QXRect(0, 0, width(), height()),new QXRect(0, 0, v_width, v_height),QXPainter.CompositionMode.CompositionMode_Source);
+                break;
+            }
+            
+        }else{
+			painter.fillRect(0,0,width(),height(), 0xff000000, QXPainter.BrushStyle.SolidPattern);
+        }
+        //painter.drawText(formatTime(current_millis) + "/" + szduration, 0, 10 ,txtpt);
+     }
+     
+     AVCodeC.IPlayerCallback getPlayer(){
+		return new Player();
+     }
+    bool onDragEnter(int l,int t,int r,int b)override{
+		return current_millis == 0;
+    }
+    bool onDragMove(int l,int t,int r,int b)override{
+		return current_millis == 0;
+    
+    }
+    bool onDragLeave(int l,int t,int r,int b)override{
+		return true;
+    }
+    
+    
+    bool createPlayer(){
+		bStop = false;
+		return true;
+    }
+    
+	void onDrop(Object [] object){
+		if (object.length > 0){
+			try{
+				String file = (String)object[0];
+                drag.onDrag(file);
+			}catch(Exception e){
+            
+            }
+        }
+    }
+    
+    
+    
+    void setDragListener(DropListener gl){
+		drag = gl;
+    }
+    
+    
+     void setParameter(int _fps,long dura, int w,int h, bool ba, bool bv, playProgressListener pgl){
+		if (_fps <= 0 || fps > 1000){
+			fps = 30;
+            frametime = 0;
+            dynamicfps = true;
+        }else{
+			dynamicfps = false;
+			fps = _fps;
+			if (fps != 0){
+				frametime = 1000 / fps;
+			}
+        }
+        v_width = w;
+        v_height = h;
+        //声音缓冲时间 50毫秒
+        duration = dura;
+        //szduration = formatTime(duration);
+        
+        player = new AudioOut();
+
+		player.create(2, 44100, 16, 100);
+ 
+
+		bhasVideo = bv;
+        bhasAudio = ba;
+		ppl = pgl;
+     }
+     
+
+     void sendBuffer(byte[] buffer, int length, long timemillis, bool bVideo){
+
+		List<Frame> framelist = video_framelist;
+        
+		if (bVideo == false){
+			framelist = audio_framelist;
+		}
+
+		synchronized(framelist){
+			
+			if (bclear || bStop){
+				return;
+            }
+			//图像缓冲时间 1秒
+			if (bVideo || (bhasVideo == false)){
+				while (bStop == false && framelist.size() > fps * 2){
+					framelist.wait();
+				}
+			}
+            
+            if (bStop){
+				return ;
+            }
+			framelist.add(new Frame(buffer, timemillis, bVideo));
+            framelist.notify();
+		}
+  
+     }
+     
+    long bytes2ms(long data_bytelength, int sample_rate, int bit_wide, int channel){
+		return (data_bytelength * 8 * 1000) / (sample_rate * bit_wide * channel);
+	}
+
+
+	void stop(){
+		if (bStop == true){
+			return ;
+        }
+		synchronized(video_framelist){
+			synchronized(audio_framelist){
+				bStop = true;
+                audio_framelist.notifyAll();
+                audio_framelist.wait();
+                audio_framelist.clear();
+                
+			}
+            
+            video_framelist.notifyAll();
+            video_framelist.wait();
+            video_framelist.clear();
+            
+            current_data = nilptr;
+        }
+        
+        bclear = false;
+        current_millis = 0;
+        duration = 0;
+        fps = 0;
+        //szduration = nilptr;
+        player = nilptr;
+        bhasVideo = false;
+        bhasAudio = false;
+        
+        runOnUi(new Runnable(){
+			void run()override{
+				update();
+            }
+        });
+    }
+    
+    void setRenderSetting(int n){
+		nRenderSetting = n;
+    }
+    
+    
+    
+    void startPlay(){
+
+		new Thread(){
+			void run()override{
+				setName("Video Display");
+                long vabs = _system_.currentTimeMillis();
+                long vduration = 0;
+                
+                Frame current;
+                
+				while (bStop == false){
+					int delay  = 0;
+                    
+					long cms = _system_.currentTimeMillis();
+                    
+					synchronized(video_framelist){
+						while (video_framelist.size() < 2 && bStop == false){
+							video_framelist.wait();
+                        }
+
+
+						if (video_framelist.size() > 1 && (bclear == false)){
+							current = video_framelist.pollHead();
+                            
+							Frame next_frame = video_framelist.iterator().get();
+                            
+                            long this_delay = next_frame.timemillis - current.timemillis;
+                            
+                            long rendertime = vabs + vduration;
+                            
+                            delay = rendertime - cms;
+                            
+                            vduration += this_delay;
+                            
+							video_framelist.notify();
+						}
+					}
+                    
+                    if (bclear == false){
+						if (ppl != nilptr){
+							ppl.onProgress(current_millis, duration);
+						}
+
+						if (bStop){
+							break;
+						}
+                        
+                        long vcorrect_ms = ((cms + delay) - current.timemillis) - correct_ms;
+                        //根据音频来修正当前的视频速度
+                        if (vcorrect_ms > 0){
+							delay *= 1.2;
+                        }else{
+							delay *= 0.8;
+                        }
+						if (delay < 0 || delay > 500){
+							delay = 0;
+                            vabs = cms;
+                            vduration = 0;
+						}
+                        
+						if (delay > 0){
+							sleep(delay);
+                        }
+                        
+                        current_data = current;
+                        current_millis = current.timemillis;
+                        XVideoSurface.this.postUpdate();
+                    }
+                }
+                
+                synchronized(video_framelist){
+					video_framelist.notifyAll();
+                }
+            }
+        }.start();
+        
+        player.play();
+        
+		new Thread(){
+			void run()override{
+            
+				setName("Audio Display");
+                long aabstime = _system_.currentTimeMillis();
+                long render_duration = 0;
+                
+				while (bStop == false){
+					Frame audioFrame = nilptr;
+
+					synchronized(audio_framelist){
+						while (audio_framelist.size() == 0 && bStop == false){
+							audio_framelist.wait();
+                        }
+						if ((bclear == false) && audio_framelist.size() > 0){
+							audioFrame = audio_framelist.pollHead();
+                            audio_framelist.notify();
+
+						}
+					}
+					if (bStop){
+						break;
+					}
+                    if (audioFrame != nilptr && (bclear == false)){
+						//用音频来修正视频的时间
+                       
+						long cms = _system_.currentTimeMillis();
+                        long rendertime = aabstime + render_duration - 20;
+                        
+                        long delay = rendertime - cms;
+                        
+						if (bhasVideo){
+							//渲染时间 - 现在的真实时间
+							correct_ms = rendertime - audioFrame.timemillis;
+						}
+                        
+                        if (delay > 0){
+							sleep(delay);
+                        }else
+                        if (delay < 0){
+							aabstime = cms;
+                            render_duration = 0;
+                        }
+                        
+                        render_duration += bytes2ms(audioFrame.data.length,44100,16,2);
+                        
+						player.write(audioFrame.data,audioFrame.data.length);
+                        
+                        if (ppl != nilptr && bhasVideo == false){
+							ppl.onProgress(audioFrame.timemillis, duration);
+                        }
+                    }
+                }
+                
+                synchronized(audio_framelist){
+					audio_framelist.notifyAll();
+                }
+            }
+        }.start();
+     }
+};

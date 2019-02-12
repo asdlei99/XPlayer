@@ -1,0 +1,32 @@
+﻿生成启动时间为 2019/1/27 22:46:12。
+     1>项目“D:\home\XPlayer\ffmpeghelper\ffmpeghelper\ffmpeghelper.vcxproj”在节点 2 上(Build 个目标)。
+     1>Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\home\XPlayer\ffmpeghelper\Debug\ffmpeghelper.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files (x86)\Visual Leak Detector\lib\Win32" avcodec.lib avformat.lib avutil.lib swscale.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\home\XPlayer\ffmpeghelper\Debug\ffmpeghelper.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\home\XPlayer\ffmpeghelper\Debug\ffmpeghelper.lib" /MACHINE:X86 Debug\dllmain.obj
+         Debug\ffmpeghelper.obj
+         Debug\stdafx.obj
+            正在创建库 D:\home\XPlayer\ffmpeghelper\Debug\ffmpeghelper.lib 和对象 D:\home\XPlayer\ffmpeghelper\Debug\ffmpeghelper.exp
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _av_malloc，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _av_frame_alloc，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _av_frame_free，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avcodec_alloc_context3，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avcodec_parameters_to_context，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avcodec_open2，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avcodec_close，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _av_packet_unref，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avcodec_find_decoder，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avcodec_send_packet，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avcodec_receive_frame，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avformat_free_context，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avformat_open_input，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _avformat_find_stream_info，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _av_read_frame，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _sws_getContext，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _sws_scale，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _av_image_fill_arrays，该符号在函数 _main 中被引用
+     1>ffmpeghelper.obj : error LNK2019: 无法解析的外部符号 _av_image_get_buffer_size，该符号在函数 _main 中被引用
+     1>D:\home\XPlayer\ffmpeghelper\Debug\ffmpeghelper.exe : fatal error LNK1120: 19 个无法解析的外部命令
+     1>已完成生成项目“D:\home\XPlayer\ffmpeghelper\ffmpeghelper\ffmpeghelper.vcxproj”(Build 个目标)的操作 - 失败。
+
+生成失败。
+
+已用时间 00:00:00.29

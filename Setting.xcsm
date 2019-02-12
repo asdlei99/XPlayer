@@ -1,0 +1,73 @@
+//xlang Source, Name:Setting.xcsm 
+//Date: Mon Feb 17:16:38 2019 
+
+class Setting : QXDialog{
+	QXLabel qxtitle = new QXLabel();
+    
+    QXLabel txt1 = new QXLabel(), txt2 = new QXLabel();
+    Switche sw1 = new Switche(), sw2 = new Switche();
+    MainDialog mainDialog;
+    QXPushButton btnClose = new QXPushButton();
+    
+	bool create(QXWidget parent)  {
+		//TODO:	
+        if (super.create(parent)){
+			setWindowFlags(FramelessWindowHint);
+			setOpacity(0.5);
+			qxtitle.create(this);
+			qxtitle.move(5,5);
+			qxtitle.setText("画面显示设置");
+            
+			txt1.create(this);
+			txt1.move(5,20);
+			txt1.setText("保持画面比例");
+            
+			txt2.create(this);
+			txt2.move(5,65);
+			txt2.setText("显示原始尺寸");
+            
+            mainDialog = (MainDialog)parent;
+            
+            btnClose.create(this);
+            btnClose.setText("X");
+			btnClose.move(100,0);
+            btnClose.resize(20,20);
+			btnClose.setOnClickListener(new onClickListener(){
+				void onClick(QXObject obj, bool checked)override{
+					hide();
+                }
+            });
+            
+            sw1.create(this);
+            sw1.move(5,35);
+            sw1.setOnSwitchListener(new Switche.OnSwitchListener(){
+				void onSwitch(Switche view,bool __bOn)override{
+					mainDialog.setRenderSetting(__bOn ? 1 : 0);
+                    sw2.setChecked(false,true);
+                }
+            
+            });
+            
+            sw2.create(this);
+            sw2.move(5,80);
+            sw2.setOnSwitchListener(new Switche.OnSwitchListener(){
+				void onSwitch(Switche view,bool __bOn)override{
+					mainDialog.setRenderSetting(__bOn ? 2 : 0);
+                    sw1.setChecked(false,true);
+                }
+            
+            });
+            
+            sw1.setChecked(false,false);
+            sw1.setChecked(false,false);
+            return true;
+        }
+        return false;
+	}
+
+	void show(int x,int y){
+		move(x, y);
+        resize(120,120);
+        show();
+    }
+};

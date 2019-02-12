@@ -1,0 +1,237 @@
+//xlang Source, Name:ControlPane.xcsm 
+//Date: Thu Jan 00:37:23 2019 
+
+class ControlPane : QXWidget{
+
+	byte [] imgbuffer = __xPackageResource("ui/panebk.png");
+    byte [] posbuffer = __xPackageResource("ui/pos.png");
+    
+    String uriFile;
+    
+    AVCodeC codec ;
+    AVCodeC playcontroller ;
+	QXImage img = new QXImage(imgbuffer, "png");
+    QXImage imgpos = new QXImage(posbuffer, "png");
+    
+    QXLabel label = new QXLabel();
+    QXWidget previewWidget = new QXWidget();
+    
+    bool bStop = true;
+    bool hasVideo;
+    
+    long last_previewpos;
+    long position = 0;
+    bool canPreview = false;
+    long duration = 1;
+    String szDuration;
+    PreviweThread previewThread = nilptr;
+    bool previewBusy = false;
+    byte [] _preview;
+    QXImage preview;
+    byte []previewData;
+    
+    int videow, videoh;
+    String formatTime(long ms){
+		int h = (ms / (1000 * 60 * 60));
+        int m = ((ms %(1000 * 60 * 60)) / (1000 * 60));
+        int s = ((ms %(1000 * 60)) / (1000));
+		return String.format("%d:%02d:%02d", h, m, s);
+    }
+    
+    
+    class PreviweThread : Thread{
+		int x, y;
+
+		void run()override{
+			setName("preview");
+			codec = new AVCodeC(nilptr);
+			if (codec.open(uriFile)){
+				codec.prepare();
+				codec.begin();
+				codec.preparePreview();
+                videoh = codec.getHeight();
+                videow = Math.max(1,  codec.getWidth());
+				canPreview = true;
+				previewWidget.resize(160.f ,160.f * videoh / videow);
+			}
+            
+			while (bStop == false){
+            
+				synchronized(this){
+					previewBusy = false;
+					this.wait();					
+                    
+                }
+                
+                previewData = codec.getPreview(previewPosition);
+                
+				runOnUi(new Runnable(){
+					void run()override{
+						preview = nilptr;
+						previewWidget.postUpdate();
+					}
+				});
+			}
+            
+            
+            synchronized(ControlPane.this){
+				codec.close();
+                codec = nilptr;
+				ControlPane.this.notify();
+            }
+		}
+    };
+    
+    
+    void init(){
+		label.create();        
+        label.setWindowFlags(ToolTip | WindowStaysOnTopHint);
+        label.setBackgroundRole(0);
+        label.setFocusPolicy(NoFocus);
+        label.setStyleSheet("border: 1px solid #636363;border-radius: 1px;padding: 2px;background-color:#9f333333;color: #ffffff;");
+        //label.setOpacity(0.8);
+		previewWidget.create();
+        previewWidget.setWindowFlags(ToolTip | WindowStaysOnTopHint);
+        previewWidget.resize(180,120);
+        previewWidget.setFocusPolicy(NoFocus);
+        previewWidget.setOnPaintListener(new onPaintListener(){
+			QXPainter.Paint txtpt = new QXPainter.Paint();
+            
+            onPaintListener(){   
+				txtpt.setColor(0xff00ff00);
+				txtpt.setTextSize(20);
+				txtpt.setStyle(QXPainter.Paint.FILL);
+            }
+            
+			void onPaint(QXObject obj, int l,int t, int r,int b, long hpaint)override{
+            
+				QXPainter paint = new QXPainter(hpaint);
+                
+				byte [] pdata = previewData;
+                
+                if (bStop == false){
+					int w = videow;
+					int h = videoh;
+					
+					if (pdata != nilptr){
+						_preview = pdata;
+						previewData = nilptr;
+						preview = new QXImage(pdata, w, h,QXImage.Format_ARGB32);
+					}
+					
+					if (preview != nilptr){
+						paint.drawImage(preview,new QXRect(0, 0, previewWidget.width(), previewWidget.height()),new QXRect(0, 0, w, h),QXPainter.CompositionMode.CompositionMode_Source);
+					}else{
+						paint.fillRect(0,0,previewWidget.width(),previewWidget.height(), 0xff000000, QXPainter.BrushStyle.SolidPattern);
+                        paint.drawText("正在加载...", 0, 10 ,txtpt);
+                    }
+                }else{
+					paint.fillRect(0,0,previewWidget.width(),previewWidget.height(), 0xff000000, QXPainter.BrushStyle.SolidPattern);
+					paint.drawText("正在加载...", 0, 10 ,txtpt);
+				}
+			}
+        });
+        previewWidget.update();
+    }
+    
+	void onPaint(int l, int t, int r, int b, long hpaint) override {
+		QXPainter paint = new QXPainter(hpaint);
+		paint.drawImage(img,new QXRect(0, 0, width(), height()),new QXRect(0, 0, 1, 12),QXPainter.CompositionMode.CompositionMode_Source);
+        
+        if (duration == 0){
+			duration = 1;
+        }
+        paint.drawImage(imgpos, width() * position / duration,0);
+	}
+	
+    void config(String file, long durat, AVCodeC playcon){
+		duration = durat;
+        szDuration = formatTime(durat);
+		uriFile = (file);
+        hasVideo = playcon.hasVideo();
+        playcontroller = playcon;
+        bStop = false;
+    }
+
+    
+    void onMouseMove(int Button,int x,int y,int flags,int source)override{
+		if (bStop == false){
+			label.setText(formatTime(duration * (double)x / width())  + String.format(" | %02d%%",(int)(0.5f + (double)x * 100 / width())));
+			QPoint pt = mapToGlobal(x,y);
+			label.move(pt.x,pt.y - 40);
+			label.show();
+			
+			if (hasVideo){
+				
+                long curpreviewpos = (duration * (double)x / width() + 0.5f);
+                curpreviewpos -= (curpreviewpos % 1000);
+                
+                if (last_previewpos != curpreviewpos){
+					last_previewpos = curpreviewpos;
+					showPreview(curpreviewpos, pt.x,pt.y + 20); 
+                }
+			}
+        }
+    }
+    
+    void onMouseButtonPress(int Button,int x,int y,int flags,int source){
+		if (bStop == false && Button == 1){
+			position = duration * (double)x / width();
+			playcontroller.seek(position);
+            update();
+        }
+    }
+    
+    long previewPosition = 0;
+    
+    void stop(){
+		synchronized(this){
+			if (previewThread != nilptr){
+				synchronized(previewThread){
+					bStop = true;
+					previewThread.notify();
+					previewData = nilptr;
+				}
+                this.wait();
+			}
+            previewThread = nilptr;
+        }
+    }
+
+    void showPreview(long pos, int x, int y){
+
+
+		previewWidget.move(x,y);
+		previewWidget.show();
+        
+        synchronized(this){
+			if (previewThread == nilptr){
+				previewThread = new PreviweThread();
+				previewThread.start();
+			}else{
+				synchronized(previewThread){
+					if (previewBusy == false){
+						previewBusy = true;
+						previewPosition = pos;
+						previewThread.x = x;
+						previewThread.y = y;
+						previewThread.notify();
+					}
+				}
+			}
+		}
+        
+    }
+    
+    void onLeave(){
+        label.hide();
+        previewWidget.hide();
+    }
+
+	void setPosition(double pos){
+		position = pos;
+        postUpdate();
+    }
+    
+    
+};

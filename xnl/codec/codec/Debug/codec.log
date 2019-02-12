@@ -1,0 +1,27 @@
+﻿生成启动时间为 2018/6/26 2:50:42。
+     1>项目“E:\Developments\Cadaqs\caNamespace\cross_platform\codec\codec\codec.vcxproj”在节点 2 上(Rebuild 个目标)。
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D CODEC_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MTd /GS /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Debug\codec.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D CODEC_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MTd /GS /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\codec.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt AudioPlayer.cpp codec.cpp
+         codec.cpp
+         AudioPlayer.cpp
+     1>e:\developments\cadaqs\canamespace\cross_platform\codec\codec\audioplayer.cpp(153): warning C4018: “<=”: 有符号/无符号不匹配
+         正在生成代码...
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D CODEC_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MTd /GS /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt dllmain.cpp
+         dllmain.cpp
+       ResourceCompile:
+         C:\Program Files (x86)\Windows Kits\8.1\bin\x86\rc.exe /D _UNICODE /D UNICODE /l"0x0409" /nologo /fo"Debug\codec.res" codec.rc 
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"E:\Developments\Cadaqs\caNamespace\cross_platform\codec\Debug\codec.dll" /INCREMENTAL /NOLOGO capool.lib caallocator_mfc.lib cathreadpool.lib winmm.lib cautils.lib Wldap32.lib caRemoteCallPipe.lib ws2_32.lib catimer.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /DEF:"codec.def" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:\Developments\Cadaqs\caNamespace\cross_platform\codec\Debug\codec.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\Developments\Cadaqs\caNamespace\cross_platform\codec\Debug\codec.lib" /MACHINE:X86 /DLL Debug\codec.res
+         Debug\AudioPlayer.obj
+         Debug\codec.obj
+         Debug\dllmain.obj
+         Debug\stdafx.obj
+            正在创建库 E:\Developments\Cadaqs\caNamespace\cross_platform\codec\Debug\codec.lib 和对象 E:\Developments\Cadaqs\caNamespace\cross_platform\codec\Debug\codec.exp
+         codec.vcxproj -> E:\Developments\Cadaqs\caNamespace\cross_platform\codec\Debug\codec.dll
+     1>已完成生成项目“E:\Developments\Cadaqs\caNamespace\cross_platform\codec\codec\codec.vcxproj”(Rebuild 个目标)的操作。
+
+生成成功。
+
+已用时间 00:00:01.68

@@ -1,0 +1,201 @@
+//xlang Source, Name:MediaBuffer.xcsm 
+//Date: Tue Jan 20:47:26 2019 
+
+class MediaBuffer : AVCodeC.IPlayerCallback{
+
+	AVCodeC.IPlayerCallback _player;
+    
+    long bufferMillis = 0;
+    
+    bool bStop = true;
+    
+    //注意防止duration太小造成问题
+    static const int 
+		MIN_BUFFER = 1500, //最小缓存时间
+		MAX_BUFFER = 10000;	//最大缓存时间
+    
+	class MediaFrame{
+		MediaFrame(byte[] d, long t, bool b){
+			data = d;
+            timemillis = t;
+            bVideo = b;
+        }
+        
+		byte[] data;
+        long timemillis;
+        bool bVideo;
+    };
+    
+    List<MediaFrame> mList = new List<MediaFrame>();
+    
+    bool bStarted = false;
+    
+    void config(long bufferms, AVCodeC.IPlayerCallback _p){
+		bufferMillis = bufferms;
+        _player = _p;
+        bStarted = false;
+        mList.clear();
+    }
+    
+    bool create(){
+		if (_player.create()){
+			bStop = false;
+            return run();
+        }
+		return false;
+    }
+    
+    void stop(){
+		synchronized(mList){
+			bStop = true;
+            mList.notify();
+            mList.wait();
+            mList.clear();
+            bufferMillis = MIN_BUFFER;
+        }
+    }
+    
+    long getPosition()override{
+		return _player.getPosition();
+    }
+    void flush(){
+		synchronized(mList){
+			mList.clear();
+            bStarted = false;
+        }
+		_player.flush();
+    }
+    bool seek(long pos)override{
+		return _player.seek(pos);
+    }
+    
+	void writeVideoData(byte [] data, int length, long timemillis){
+    	byte[] s_buffer = new byte[length];
+		_system_.arrayCopy(data,0,s_buffer,0,length);
+            
+		synchronized(mList){
+			if (bStop){
+				return;
+            }
+			if (bufferMillis == 0){
+				_player.writeVideoData(s_buffer, length, timemillis);
+			}else{
+				if (mList.size() > 0){
+					MediaFrame mf =  mList.iterator().get();
+                    while (bStop == false && (timemillis - mf.timemillis) > (bufferMillis << 2)){
+						update(timemillis);
+						mList.notify();
+						mList.wait();
+                        if (mList.size() == 0){
+							break;
+                        }
+                        mf =  mList.iterator().get();
+                    }
+                }
+				if (bStop){
+					return;
+				}
+				mList.add(new MediaFrame(s_buffer, timemillis, true));
+				update(timemillis);
+                mList.notify();
+            }
+        }
+	}
+    
+	void writeAudioData(byte [] data, int length, long timemillis){
+		byte[] s_buffer = new byte[length];
+		_system_.arrayCopy(data,0,s_buffer,0,length);
+
+		synchronized(mList){
+			if (bStop){
+				return;
+            }
+			if (bufferMillis == 0){
+				_player.writeAudioData(s_buffer, length, timemillis);
+			}else{
+				if (mList.size() > 0){
+					MediaFrame mf =  mList.iterator().get();
+                    while (bStop == false && (timemillis - mf.timemillis) > (bufferMillis * 2)){
+						update(timemillis);
+						mList.notifyAll();
+						mList.wait();
+
+                        if (mList.size() == 0){
+							break;
+                        }
+                        mf =  mList.iterator().get();
+                    }
+                }
+				if (bStop){
+					return;
+				}
+				mList.add(new MediaFrame(s_buffer, timemillis, false));
+				update(timemillis);
+                mList.notifyAll();
+            }
+        }
+	}
+    
+    long bytes2ms(long data_bytelength, int sample_rate, int bit_wide, int channel){
+		return (data_bytelength * 8 * 1000) / (sample_rate * bit_wide * channel);
+	}
+    
+    void update(long timemillis){
+		if (bStarted == false){
+			MediaFrame mf = mList.iterator().get();
+            if (timemillis - mf.timemillis > bufferMillis){
+				bStarted = true;
+            }
+        }
+    }
+    
+    bool isNeedBuffer(){
+		return false;
+    }
+    
+    bool run(){
+		new Thread(){
+			void run()override{
+				setName("Buffer");
+				while (bStop == false){
+					MediaFrame mf = nilptr;
+					synchronized(mList){
+						while ((mList.size() == 0 || bStarted == false) && bStop == false){
+							mList.wait();
+						}
+                        
+                        if (mList.size() > 0){
+							mf = mList.pollHead();
+							mList.notify();
+							if (mList.size() == 0){
+								bStarted = _player.isNeedBuffer();
+                                if (false == bStarted && bufferMillis < MAX_BUFFER){
+									//如果仍然需要缓冲则加大缓冲时间
+									bufferMillis = Math.min(MAX_BUFFER, (int)(bufferMillis* 1.5));
+                                }
+							}
+                        }
+					}
+                    
+                    if (bStop ){
+						break;
+                    }
+                    
+                    if (mf != nilptr){
+						if (mf.bVideo){
+							_player.writeVideoData(mf.data, mf.data.length, mf.timemillis);
+						}else{
+							_player.writeAudioData(mf.data, mf.data.length, mf.timemillis);
+						}
+                    }
+				}
+                
+                synchronized(mList){
+					mList.notify();
+                }
+			}
+		}.start();
+        
+        return true;
+    }
+};

@@ -1,0 +1,13 @@
+﻿生成启动时间为 2019/2/1 5:58:53。
+     1>项目“D:\home\XPlayer\ffmpeghelper\ffmpeghelper\ffmpeghelper.vcxproj”在节点 2 上(Build 个目标)。
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(364,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+     1>Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"D:\home\XPlayer\x64\debug\ffmpeghelper.dll" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files (x86)\Visual Leak Detector\lib\Win64" avcodec.lib avformat.lib avutil.lib swscale.lib swresample.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /DEF:"ffmpeghelper.def" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\home\XPlayer\x64\debug\ffmpeghelper.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\home\XPlayer\x64\debug\ffmpeghelper.lib" /MACHINE:X64 /DLL x64\Debug\dllmain.obj
+         x64\Debug\ffmpeghelper.obj
+         x64\Debug\stdafx.obj
+         ffmpeghelper.vcxproj -> D:\home\XPlayer\x64\debug\ffmpeghelper.dll
+     1>已完成生成项目“D:\home\XPlayer\ffmpeghelper\ffmpeghelper\ffmpeghelper.vcxproj”(Build 个目标)的操作。
+
+生成成功。
+
+已用时间 00:00:00.35

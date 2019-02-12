@@ -1,0 +1,18 @@
+
+LIBRARY "ffmpeghelper.dll"
+
+EXPORTS
+getAudioBufferSize
+getVideoBufferSize
+closeMedia
+closeStream
+readMedia
+readStream
+beginDecode
+prepareMedia
+openMedia
+getVideoWidth
+getVideoHeight
+getVideoFps
+seekMedia
+getDuration
