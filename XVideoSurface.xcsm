@@ -95,7 +95,8 @@ class XVideoSurface : QXWidget{
 		bclear = true;
      }
      
-
+	 static byte [] idle_buffer = __xPackageResource("res/toolbar/idle.png");
+     QXImage idle_image = new QXImage(idle_buffer, "png");
      
 	 void onPaint(int l,int t, int r,int b, long hpaint) override{
 		QXPainter painter = new QXPainter(hpaint);  
@@ -139,7 +140,9 @@ class XVideoSurface : QXWidget{
             }
             
         }else{
+			
 			painter.fillRect(0,0,width(),height(), 0xff000000, QXPainter.BrushStyle.SolidPattern);
+            painter.drawImage(idle_image,new QXRect(0, 0, width(), height()),new QXRect(0, 0, idle_image.width(), idle_image.height()),QXPainter.CompositionMode.CompositionMode_Source);
         }
         //painter.drawText(formatTime(current_millis) + "/" + szduration, 0, 10 ,txtpt);
      }

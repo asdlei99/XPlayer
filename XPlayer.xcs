@@ -114,6 +114,33 @@ class MainDialog : QXDialog{
 		surface.setRenderSetting(n);
     }
     
+    bool onClose()override{
+		dostop();
+        return true;
+    }
+    
+    void dostop(){
+		if (bStop == false){
+			
+			synchronized(MainDialog.this){
+				bStop = true;
+				labStatus.setText("正在停止...");
+				
+				surface.stop();
+				mb.stop();
+				
+				codec.stop();
+				
+				pane.stop();
+				MainDialog.this.notify();
+				MainDialog.this.wait();
+			}
+			
+			labStatus.setText("已停止");
+			pane.setPosition(0);
+		}    
+    }
+    
 	bool create()override{
 		QXBuffer qb = new QXBuffer();
         byte [] buffer = __xPackageResource("ui/dialog.ui");
@@ -175,25 +202,7 @@ class MainDialog : QXDialog{
             
             btnStop.setOnClickListener(new onClickListener(){
 				void onClick(QXObject obj, bool checked)override{
-					if (bStop == false){
-						
-						synchronized(MainDialog.this){
-							bStop = true;
-                            labStatus.setText("正在停止...");
-                            
-                            surface.stop();
-                            mb.stop();
-                            
-                            codec.stop();
-                            
-                            pane.stop();
-							MainDialog.this.notify();
-							MainDialog.this.wait();
-						}
-						
-                        labStatus.setText("已停止");
-                        pane.setPosition(0);
-                    }
+					dostop();
 				}
 			});
             

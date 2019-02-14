@@ -2,7 +2,7 @@
 	"XPlayer":	{
 		"version":	"1.2",
 		"language":	"xlang",
-		"sources":	["XPlayer.xcs", "ui/dialog.ui", ".\\avcodec.xcsm", ".\\XVideoSurface.xcsm", ".\\AudioOut.xcsm", ".\\MediaBuffer.xcsm", ".\\ControlPane.xcsm", "./makefile", ".\\Setting.xcsm"],
+		"sources":	["XPlayer.xcs", "ui/dialog.ui", ".\\avcodec.xcsm", ".\\XVideoSurface.xcsm", ".\\AudioOut.xcsm", ".\\MediaBuffer.xcsm", ".\\ControlPane.xcsm", "./makefile", ".\\Setting.xcsm", ".\\app.version"],
 		"configures":	{
 			"debug":	{
 				"path":	{
@@ -17,18 +17,18 @@
 				"cmd":	"$(Output)",
 				"args":	"$(Output)",
 				"workdir":	"$(ProjectDir)",
-				"wtype":	"",
-				"ostype":	"",
-				"outname":	"$(ProjectName)$(Ext)",
-				"outpath":	"$(ProjectDir)/$(Arch)/$(Configure)",
-				"command":	"-ce",
-				"uaclevel":	"默认",
 				"prebuild":	"",
 				"preclean":	"",
 				"makebuild":	"",
 				"makeclean":	"clean",
 				"afterbuild":	"",
-				"afterclean":	""
+				"afterclean":	"",
+				"wtype":	"",
+				"ostype":	"",
+				"outname":	"$(ProjectName)$(Ext)",
+				"outpath":	"$(ProjectDir)/$(Arch)/$(Configure)",
+				"command":	"-ce",
+				"uaclevel":	"默认"
 			},
 			"release":	{
 				"path":	{
@@ -47,6 +47,6 @@
 			}
 		},
 		"versioninc":	"0",
-		"icofile":	""
+		"icofile":	"64x64.ico"
 	}
 }
