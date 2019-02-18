@@ -70,6 +70,7 @@ class MediaBuffer : AVCodeC.IPlayerCallback{
     }
     
 	void writeVideoData(byte [] data, int length, long timemillis){
+		_system_.output("timestamp:" + timemillis + " ,stream type:video");
     	byte[] s_buffer = new byte[length];
 		_system_.arrayCopy(data,0,s_buffer,0,length);
             
@@ -103,6 +104,10 @@ class MediaBuffer : AVCodeC.IPlayerCallback{
 	}
     
 	void writeAudioData(byte [] data, int length, long timemillis){
+    
+
+		_system_.output("timestamp:" + timemillis + " ,stream type:audio, duration:" + bytes2ms(length, 44100, 16, 2));
+        
 		byte[] s_buffer = new byte[length];
 		_system_.arrayCopy(data,0,s_buffer,0,length);
 

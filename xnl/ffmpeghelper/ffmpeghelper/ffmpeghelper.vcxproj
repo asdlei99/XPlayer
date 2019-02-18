@@ -75,7 +75,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>.\ffmpeg-20190126-d8ebfd1-win64-dev\include;$(IncludePath)</IncludePath>
     <LibraryPath>.\ffmpeg-20190126-d8ebfd1-win64-dev\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>D:\home\XPlayer\x64\debug</OutDir>
+    <OutDir>E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\x64\debug</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -86,7 +86,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>.\ffmpeg-20190126-d8ebfd1-win64-dev\include;$(IncludePath)</IncludePath>
     <LibraryPath>.\ffmpeg-20190126-d8ebfd1-win64-dev\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>D:\home\XPlayer\x64\debug</OutDir>
+    <OutDir>E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\x64\debug</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -150,6 +150,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FFMPEGHELPER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

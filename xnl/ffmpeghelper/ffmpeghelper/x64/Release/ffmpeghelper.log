@@ -1,23 +1,27 @@
-﻿生成启动时间为 2019/1/30 16:32:04。
-     1>项目“D:\home\XPlayer\ffmpeghelper\ffmpeghelper\ffmpeghelper.vcxproj”在节点 2 上(Build 个目标)。
+﻿生成启动时间为 2019/2/15 22:24:18。
+     1>项目“E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\xnl\ffmpeghelper\ffmpeghelper\ffmpeghelper.vcxproj”在节点 2 上(Build 个目标)。
      1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(364,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files (x86)\Visual Leak Detector\include" /Zi /nologo /W3 /WX- /sdl /O2 /Oi /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D FFMPEGHELPER_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"x64\Release\ffmpeghelper.pch" /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt ffmpeghelper.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files (x86)\Visual Leak Detector\include" /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Ot /Oy /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D FFMPEGHELPER_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"x64\Release\ffmpeghelper.pch" /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files (x86)\Visual Leak Detector\include" /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Ot /Oy /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D FFMPEGHELPER_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt dllmain.cpp
+         dllmain.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files (x86)\Visual Leak Detector\include" /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Ot /Oy /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D FFMPEGHELPER_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"x64\Release\ffmpeghelper.pch" /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt ffmpeghelper.cpp
          ffmpeghelper.cpp
-     1>d:\home\xplayer\ffmpeghelper\ffmpeghelper\ffmpeg-20190126-d8ebfd1-win64-dev\include\libavutil\rational.h : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-     1>ffmpeghelper.cpp(78): warning C4018: “<”: 有符号/无符号不匹配
-     1>ffmpeghelper.cpp(192): warning C4244: “参数”: 从“int64_t”转换到“int”，可能丢失数据
-     1>ffmpeghelper.cpp(242): warning C4244: “=”: 从“double”转换到“xlong”，可能丢失数据
+     1>e:\developments\cadaqs\canamespace\castudio\xcross\xlang\xlang\xplayer\xplayer\xnl\ffmpeghelper\ffmpeghelper\ffmpeg-20190126-d8ebfd1-win64-dev\include\libavutil\rational.h : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+     1>ffmpeghelper.cpp(72): warning C4018: “<”: 有符号/无符号不匹配
+     1>ffmpeghelper.cpp(197): warning C4244: “参数”: 从“int64_t”转换到“int”，可能丢失数据
+     1>ffmpeghelper.cpp(247): warning C4244: “=”: 从“double”转换到“xlong”，可能丢失数据
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"D:\home\XPlayer\x64\debug\ffmpeghelper.dll" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files (x86)\Visual Leak Detector\lib\Win64" avcodec.lib avformat.lib avutil.lib swscale.lib swresample.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /DEF:"ffmpeghelper.def" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\home\XPlayer\x64\debug\ffmpeghelper.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\home\XPlayer\x64\debug\ffmpeghelper.lib" /MACHINE:X64 /DLL x64\Release\dllmain.obj
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\x64\debug\ffmpeghelper.dll" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files (x86)\Visual Leak Detector\lib\Win64" avcodec.lib avformat.lib avutil.lib swscale.lib swresample.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /DEF:"ffmpeghelper.def" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\x64\debug\ffmpeghelper.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\x64\debug\ffmpeghelper.lib" /MACHINE:X64 /DLL x64\Release\dllmain.obj
          x64\Release\ffmpeghelper.obj
          x64\Release\stdafx.obj
-            正在创建库 D:\home\XPlayer\x64\debug\ffmpeghelper.lib 和对象 D:\home\XPlayer\x64\debug\ffmpeghelper.exp
+            正在创建库 E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\x64\debug\ffmpeghelper.lib 和对象 E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\x64\debug\ffmpeghelper.exp
          正在生成代码
          已完成代码的生成
-         ffmpeghelper.vcxproj -> D:\home\XPlayer\x64\debug\ffmpeghelper.dll
-     1>已完成生成项目“D:\home\XPlayer\ffmpeghelper\ffmpeghelper\ffmpeghelper.vcxproj”(Build 个目标)的操作。
+         ffmpeghelper.vcxproj -> E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\x64\debug\ffmpeghelper.dll
+     1>已完成生成项目“E:\Developments\Cadaqs\caNamespace\castudio\xcross\xlang\xlang\XPlayer\XPlayer\xnl\ffmpeghelper\ffmpeghelper\ffmpeghelper.vcxproj”(Build 个目标)的操作。
 
 生成成功。
 
-已用时间 00:00:01.67
+已用时间 00:00:01.41
