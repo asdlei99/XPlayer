@@ -53,31 +53,39 @@ class ControlPane : QXWidget{
                 videow = Math.max(1,  codec.getWidth());
 				canPreview = true;
 				previewWidget.resize(160.f ,160.f * videoh / videow);
-			}
-            
-			while (bStop == false){
-            
-				synchronized(this){
-					previewBusy = false;
-					this.wait();					
-                    
-                }
-                
-                previewData = codec.getPreview(previewPosition);
-                
-				runOnUi(new Runnable(){
-					void run()override{
-						preview = nilptr;
-						previewWidget.postUpdate();
+			
+				
+				while (bStop == false){
+				
+					synchronized(this){
+						previewBusy = false;
+						this.wait();					
+						
 					}
-				});
-			}
-            
-            
-            synchronized(ControlPane.this){
-				codec.close();
-                codec = nilptr;
-				ControlPane.this.notify();
+					
+					previewData = codec.getPreview(previewPosition);
+					
+					runOnUi(new Runnable(){
+						void run()override{
+							preview = nilptr;
+							previewWidget.postUpdate();
+						}
+					});
+				}
+				
+				
+				synchronized(ControlPane.this){
+					codec.close();
+					codec = nilptr;
+					ControlPane.this.notify();
+				}
+            }else{
+				runOnUi(new Runnable(){
+							void run()override{
+								preview = nilptr;
+								previewWidget.postUpdate();
+							}
+						});
             }
 		}
     };
