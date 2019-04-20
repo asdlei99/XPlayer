@@ -3,14 +3,18 @@
 
 
 class XVideoSurface : QXWidget{
-
 	class Frame{
 		Frame(byte[] d, long t, bool b){
 			data = d;
             timemillis = t;
             bVideo = b;
         }
-        
+		Frame(short[] d, long t, bool b){
+			adata = d;
+            timemillis = t;
+            bVideo = b;
+        }       
+        short [] adata;
 		byte[] data;
         long timemillis;
         bool bVideo;
@@ -26,10 +30,10 @@ class XVideoSurface : QXWidget{
     
     class Player : AVCodeC.IPlayerCallback{
 		void writeVideoData(byte [] data, int length, long timemillis)override{
-			sendBuffer(data, length, timemillis, true);
+			sendVideoBuffer(data, length, timemillis);
         }
-        void writeAudioData(byte [] data, int length, long timemillis)override{
-			sendBuffer(data, length, timemillis, false);
+        void writeAudioData(short [] data, int length, long timemillis)override{
+			sendAudioBuffer(data, length, timemillis);
         }
         bool isNeedBuffer()override{
 			return (video_framelist.size() == 0) && (audio_framelist.size() == 0);
@@ -69,16 +73,29 @@ class XVideoSurface : QXWidget{
      bool bclear = false;
      bool bStop = true;
      int v_width, v_height;
-     long correct_ms = 0;
-     
+     static const int MIN_BUFFER_TIME = 20;
      int fps = 0;
      int frametime = 0;
      long duration = 0;
      bool dynamicfps = false;
-     
+     double faZoom = 1.f;
+     bool bMute = false;
      int nRenderSetting = 0;
-     
+     double frotate = 0.f;
      bool bhasVideo ,bhasAudio;
+     
+     // 视觉效果器
+     EfficDrawer [] effarr = {
+		new WaveDrawer() , 	// 波形柱
+        new LinesDrawwe(), 	// 波纹线条
+        new RectDrawer(), 	// 块状波形
+        new ColorRectDrawer(), 	//彩色块状
+        new TopRectDrawer(),	//块状柱
+        new MidDrawer(),	// 方形柱
+        new CircleDrawer()	//圆形
+     };
+     
+     int efficer = 0;//new WaveDrawer();
      
      AudioOut player ;
      
@@ -95,56 +112,169 @@ class XVideoSurface : QXWidget{
 		bclear = true;
      }
      
+     String formatTime(long ms){
+		int h = (ms / (1000 * 60 * 60));
+        int m = ((ms %(1000 * 60 * 60)) / (1000 * 60));
+        int s = ((ms %(1000 * 60)) / (1000));
+		return String.format("%d:%02d:%02d", h, m, s);
+     }
+     
+     
+	static class ThreadExecutionState : Library{
+		static const int 
+				ES_AWAYMODE_REQUIRED = 0x00000040,
+				ES_CONTINUOUS = 0x80000000,
+                ES_DISPLAY_REQUIRED = 0x00000002,
+                ES_SYSTEM_REQUIRED = 0x00000001,
+                ES_USER_PRESENT = 0x00000004;
+                
+		static void load(){
+			try{
+				loadLibrary("kernel32.dll");
+            }catch(Exception e){
+            
+            }
+        }
+		
+        import{
+			int stdcall SetThreadExecutionState(int esFlags);
+        };
+    };
+    
+    void disableSystemSleep(){
+		if (_system_.getPlatformId() == 0){
+			ThreadExecutionState.SetThreadExecutionState(ThreadExecutionState.ES_CONTINUOUS | ThreadExecutionState.ES_SYSTEM_REQUIRED | ThreadExecutionState.ES_DISPLAY_REQUIRED);
+        }
+    }
+    
+    void restoreSystemSleep(){
+		if (_system_.getPlatformId() == 0){
+			ThreadExecutionState.SetThreadExecutionState(ThreadExecutionState.ES_CONTINUOUS);
+		}
+    }
+    
 	 static byte [] idle_buffer = __xPackageResource("res/toolbar/idle.png");
      QXImage idle_image = new QXImage(idle_buffer, "png");
      
-	 void onPaint(int l,int t, int r,int b, long hpaint) override{
-		QXPainter painter = new QXPainter(hpaint);  
-         
-        Frame imgdata = current_data;  
-        
-        if (imgdata != nilptr){
+	 QXPainter.Paint textpaint = new QXPainter.Paint();
+     
+     onPaintListener videoCanvas = new onPaintListener(){
+		 void onPaint(QXObject obj,int l,int t,int r,int b,long hpaint)override{
+			QXWidget wobj = (QXWidget)obj;
+			int wwidth = wobj.width(), wheight = wobj.height();
 			
-			QXImage image = new QXImage(imgdata.data, v_width, v_height, QXImage.Format_ARGB32);
-			//painter.drawImage(image, 0, 0);
-            
-            switch(nRenderSetting){
-                case 1:
-                {
-					double ww = width();
-					double wh = height();
-					
-					ww /= (double)v_width;
-					wh /= (double)v_height;
-					
-					if (ww < wh){
-						//以宽为准
-						int nh = v_height * ww;
-						painter.drawImage(image,new QXRect(0, (height() - nh) / 2, width(), nh),new QXRect(0, 0, v_width, v_height),QXPainter.CompositionMode.CompositionMode_Source);
-					}else{
-						//以高为准
-						int nh = v_width * wh;
-						painter.drawImage(image,new QXRect((width() - nh) / 2, 0, v_width * wh, height()),new QXRect(0, 0, v_width, v_height),QXPainter.CompositionMode.CompositionMode_Source);
+			QXPainter painter = new QXPainter(hpaint);  
+			painter.fillRect(0,0,wwidth,wheight,0xff000000,QXBrush.Style.SolidPattern);
+			
+
+
+			if (bhasVideo == false && bStop == false){
+			
+				EfficDrawer effer = effarr[efficer];
+				if (effer != nilptr){
+					effer.prepare();
+					effer.drawWave(painter, wwidth, wheight - 10);
+				}
+				painter.setPaint(textpaint);
+				String text = formatTime(current_millis) + "/" + formatTime(duration);
+				painter.drawText(text,10,10);
+			}else{
+
+                
+				Frame imgdata = current_data;  
+				QXRect rr ;
+				if (imgdata != nilptr){
+					double rotatef = frotate;
+					if (rotatef != 0){
+						painter.save();
+						QXMatrix matrix = painter.getMatrix();
+						matrix.translate(wwidth / 2,wheight / 2);
+						matrix.rotate(rotatef);
+						matrix.translate(-wwidth / 2,-wheight / 2);
+						painter.setMatrix(matrix);
+						
 					}
-					
-                }
-                break;
-                case 2:
-                {
-					painter.drawImage(image,new QXRect((width() - v_width) / 2, (height() - v_height) / 2, v_width, v_height),new QXRect(0, 0, v_width, v_height),QXPainter.CompositionMode.CompositionMode_Source);
-                }
-                break;
-                default:
-                painter.drawImage(image,new QXRect(0, 0, width(), height()),new QXRect(0, 0, v_width, v_height),QXPainter.CompositionMode.CompositionMode_Source);
-                break;
-            }
+					QXImage image = new QXImage(imgdata.data, v_width, v_height, QXImage.Format_ARGB32);
+					//painter.drawImage(image, 0, 0);
+					double m_width = v_width, m_height = v_height;
+                    
+					switch(nRenderSetting){
+						case 1:
+						{
+							if (((int)(rotatef + 0.5f)) % 180 == 90){
+								double ww = (double)(wheight) / v_width;
+								double wh = (double)(wwidth) / v_height;
+
+								// 窗口尺寸除以画面尺寸 得到比率
+                                int destwidth, destheight;
+                                
+								if (ww < wh){
+									destwidth = wheight;
+									destheight = v_height * ww;
+								}else{
+									//以高为准
+									destheight = wwidth;
+									destwidth = v_width * wh;
+								}
+                                  
+								int destx = (wwidth - destwidth) / 2, desty = (wheight - destheight) / 2;
+                                painter.drawImage(image,new QXRect(destx, desty,destx + destwidth,desty + destheight),new QXRect(0, 0, m_width, m_height),QXPainter.CompositionMode.CompositionMode_Source);
+                            }else{   
+								double ww = wwidth;
+								double wh = wheight;
+								ww /= (double)m_width;
+								wh /= (double)m_height;
+								
+								if (ww < wh){
+									//以宽为准
+									int nh = m_height * ww;
+                                    int _ypt = (wheight - nh) / 2;
+									painter.drawImage(image,new QXRect(0, _ypt, wwidth, _ypt + nh),new QXRect(0, 0, m_width, m_height),QXPainter.CompositionMode.CompositionMode_Source);
+								}else{
+									//以高为准
+									int nh = m_width * wh;
+                                    int _xpt = (wwidth - nh) / 2;
+									painter.drawImage(image,new QXRect(_xpt, 0, _xpt + nh, wheight),new QXRect(0, 0, m_width, m_height),QXPainter.CompositionMode.CompositionMode_Source);
+								}
+                            }
+						}
+						break;
+						case 2:
+						{
+							int _xpt = (wwidth - m_width) / 2, _ypt = (wheight - m_height) / 2;
+							painter.drawImage(image,new QXRect(_xpt, _ypt, _xpt + m_width, _ypt + m_height),new QXRect(0, 0, m_width, m_height),QXPainter.CompositionMode.CompositionMode_Source);
+						}
+						break;
+						default:
+							if (((int)(rotatef + 0.5f)) % 180 == 90){
+								int _xpt = (wwidth - wheight) / 2, _ypt = (wheight - wwidth) / 2;
+								painter.drawImage(image,new QXRect(_xpt , _ypt, _xpt + wheight, _ypt + wwidth),new QXRect(0, 0, m_width, m_height),QXPainter.CompositionMode.CompositionMode_Source);
+							}else
+                            {
+								painter.drawImage(image,new QXRect(0, 0, wwidth, wheight),new QXRect(0, 0, m_width, m_height),QXPainter.CompositionMode.CompositionMode_Source);
+							}
+						break;
+					}
+					if (rotatef != 0){
+						painter.restore();
+					}
+				}else{
+					painter.fillRect(0,0,wwidth,wheight, 0xff000000, QXBrush.Style.SolidPattern);
+					painter.drawImage(idle_image,new QXRect(0, 0, wwidth, wheight),new QXRect(0, 0, idle_image.width(), idle_image.height()),QXPainter.CompositionMode.CompositionMode_Source);
+				}
+                
+
+			}
             
-        }else{
-			
-			painter.fillRect(0,0,width(),height(), 0xff000000, QXPainter.BrushStyle.SolidPattern);
-            painter.drawImage(idle_image,new QXRect(0, 0, width(), height()),new QXRect(0, 0, idle_image.width(), idle_image.height()),QXPainter.CompositionMode.CompositionMode_Source);
-        }
-        //painter.drawText(formatTime(current_millis) + "/" + szduration, 0, 10 ,txtpt);
+            if (_system_.currentTimeMillis() - volupdate < 3000){
+				painter.setPaint(textpaint);
+				painter.drawText("音量:" + (int)(faZoom * 100) + "%",wwidth - 80,10);
+			}
+		}
+     };
+     
+     onPaintListener getPaintListener(){
+		return videoCanvas;
      }
      
      AVCodeC.IPlayerCallback getPlayer(){
@@ -160,8 +290,30 @@ class XVideoSurface : QXWidget{
     bool onDragLeave(int l,int t,int r,int b)override{
 		return true;
     }
+    double getVolumeZoom(){
+		return faZoom;
+    }
     
+    void setMute(bool bm){
+		bMute = bm;
+    }
     
+    bool isMute(){
+		return bMute;
+    }
+    
+    void rotate(double r){
+		frotate += r;
+        if (frotate >= 360.f){
+			frotate -= 360.f; 
+        }
+    }
+    
+    long volupdate = 0;
+    void setVolumeZoom(double fzoom){
+		faZoom = fzoom;
+        volupdate = _system_.currentTimeMillis();
+    }
     bool createPlayer(){
 		bStop = false;
 		return true;
@@ -186,15 +338,24 @@ class XVideoSurface : QXWidget{
     
     
      void setParameter(int _fps,long dura, int w,int h, bool ba, bool bv, playProgressListener pgl){
-		if (_fps <= 0 || fps > 1000){
+		
+        for (int i =0; i < effarr.length; i++){
+			effarr[i].create();
+        }
+        
+        textpaint.setStyle(QXPainter.Paint.FILL_AND_STROKE);
+        //textpaint.setTextSize(30);
+        textpaint.setColor(0x7fefefef);
+        
+		if (_fps <= 0 || fps > 1000){ 
 			fps = 30;
-            frametime = 0;
+            frametime = 0; 
             dynamicfps = true;
         }else{
 			dynamicfps = false;
 			fps = _fps;
 			if (fps != 0){
-				frametime = 1000 / fps;
+				frametime = 1000 / fps; 
 			}
         }
         v_width = w;
@@ -213,23 +374,69 @@ class XVideoSurface : QXWidget{
 		ppl = pgl;
      }
      
-
-     void sendBuffer(byte[] buffer, int length, long timemillis, bool bVideo){
-
+	 void onCreate()override{
+		super.onCreate();
+		setOnPaintListener(videoCanvas);
+     }
+     
+     void onAttach()override{
+		super.onAttach();
+        ThreadExecutionState.load();
+		setOnPaintListener(videoCanvas);
+     }
+     
+     QXWidget paintUpdate = this;
+     
+     void switchCanvas(QXWidget canvas){
+		canvas.setOnPaintListener(videoCanvas);
+        paintUpdate = canvas;
+        setOnPaintListener(nilptr);
+     }
+     
+     void restoreCanvas(QXWidget canvas){
+		canvas.setOnPaintListener(nilptr);
+        setOnPaintListener(videoCanvas);
+        paintUpdate = this;
+     }
+     
+     void sendVideoBuffer(byte[] buffer, int length, long timemillis){
 		
 		List<Frame> framelist = video_framelist;
         
-		if (bVideo == false){
-			framelist = audio_framelist;
-		}
-
 		synchronized(framelist){
-			
 			if (bclear || bStop){
 				return;
             }
 			//图像缓冲时间 1秒
-			if (bVideo || (bhasVideo == false)){
+			
+			while (bStop == false && framelist.size() > fps * 2){
+				framelist.wait();
+			}
+			
+            
+            if (bStop){
+				return ;
+            }
+			framelist.add(new Frame(buffer, timemillis, true));
+            framelist.notify();
+		}
+     }
+     
+     void onProgress(long pos){
+		if (ppl != nilptr){
+			ppl.onProgress(pos, duration);
+		}
+     }
+     void sendAudioBuffer(short[] buffer, int length, long timemillis){
+		
+		List<Frame> framelist = audio_framelist;
+        
+		synchronized(framelist){
+			if (bclear || bStop){
+				return;
+            }
+			//图像缓冲时间 1秒
+			if (bhasVideo == false){
 				while (bStop == false && framelist.size() > fps * 2){
 					framelist.wait();
 				}
@@ -238,17 +445,22 @@ class XVideoSurface : QXWidget{
             if (bStop){
 				return ;
             }
-			framelist.add(new Frame(buffer, timemillis, bVideo));
+			framelist.add(new Frame(buffer, timemillis, false));
             framelist.notify();
 		}
-  
-     }
-     
+    }
     long bytes2ms(long data_bytelength, int sample_rate, int bit_wide, int channel){
 		return (data_bytelength * 8 * 1000) / (sample_rate * bit_wide * channel);
 	}
 
-
+	void switch_efficer(){
+		if (efficer +1 < effarr.length){
+			efficer = efficer + 1;
+        }else{
+			efficer = 0;
+        }
+        effarr[efficer].reset();
+    }
 	void stop(){
 		if (bStop == true){
 			return ;
@@ -289,26 +501,49 @@ class XVideoSurface : QXWidget{
 		nRenderSetting = n;
     }
     
+    bool bpause = false;
     
+    void setPause(bool b){
+		synchronized(video_framelist){
+			synchronized(audio_framelist){
+				bpause = b;
+				audio_framelist.notifyAll();
+			}
+            video_framelist.notifyAll();
+        }
+    }
+    bool isPaused(){
+		return bpause;
+    } 
     
     void startPlay(){
-
+        
+        long audio_render_value = 0;
+        
 		new Thread(){
+			
 			void run()override{
 				setName("Video Display");
-                long vabs = _system_.currentTimeMillis();
-                long vduration = 0;
-                
+                disableSystemSleep();
                 Frame current;
+                long video_render_value = 0;
+                //视频渲染差
                 
 				while (bStop == false){
-					int delay  = 0;
+					int fdelay  = 0;
                     
 					long cms = _system_.currentTimeMillis();
                     
 					synchronized(video_framelist){
-						while (video_framelist.size() < 2 && bStop == false){
+						while ((video_framelist.size() < 2 || bpause == true) && bStop == false){
+							bool bp = bpause;
+                            if (bp){
+								disableSystemSleep();
+                            }
 							video_framelist.wait();
+                            if (bp){
+								restoreSystemSleep();
+                            }
                         }
 
 
@@ -317,70 +552,99 @@ class XVideoSurface : QXWidget{
                             
 							Frame next_frame = video_framelist.iterator().get();
                             
-                            long this_delay = next_frame.timemillis - current.timemillis;
-                            
-                            long rendertime = vabs + vduration;
-                            
-                            delay = rendertime - cms;
-                            
-                            vduration += this_delay;
-                            
+                            fdelay = next_frame.timemillis - current.timemillis;
+                                
 							video_framelist.notify();
 						}
 					}
                     
                     if (bclear == false){
-						if (ppl != nilptr){
-							ppl.onProgress(current_millis, duration);
-						}
+						onProgress(current_millis);
+						
 
 						if (bStop){
 							break;
 						}
                         
-                        long vcorrect_ms = ((cms + delay) - current.timemillis) - correct_ms;
-                        //根据音频来修正当前的视频速度
-                        if (vcorrect_ms > 0){
-							delay *= 1.2;
-                        }else{
-							delay *= 0.8;
-                        }
-						if (delay < 0 || delay > 500){
-							delay = 0;
-                            vabs = cms;
-                            vduration = 0;
-						}
-                        
-						if (delay > 0){
-							sleep(delay);
+                        if (fdelay == 0){
+							fdelay = frametime;
+                        }else
+                        if (fdelay > 500){
+							fdelay = 20;
                         }
                         
-                        current_data = current;
+                        long video_render_time = videowrite(current, fdelay);
+                        if (audio_render_value != 0){
+							int avvalue = audio_render_value - (video_render_time - current.timemillis);
+                            // 音频时间差 - 视频时间差， 如果小于0 说明音频比视频快， 则需要立即重置视频时间， 大于0 说明需要适当延迟视频
+							if (avvalue < 0 || avvalue > 5000){
+								resetVideoRender();
+                            }else{
+								delayVideoRender(avvalue);
+                            }
+                        }
                         current_millis = current.timemillis;
-                        XVideoSurface.this.postUpdate();
                     }
                 }
                 
                 synchronized(video_framelist){
 					video_framelist.notifyAll();
                 }
+                restoreSystemSleep();
+            }
+            
+            long next_video_time = 0;
+            
+            void resetVideoRender(){
+				next_video_time = 0;
+            }
+            
+            void delayVideoRender(int delay){
+				next_video_time += (delay - 20);
+            }
+            
+            long videowrite(Frame data, int fduration){
+				long cms = _system_.currentTimeMillis();
+                                
+                if (next_video_time != 0){
+					int delay = next_video_time - cms;
+					if (delay > 0){
+						sleep(delay);
+                        next_video_time += fduration;
+					}else{
+						
+						next_video_time = cms + fduration - 10;
+                    }
+                }else{
+					next_video_time = cms + fduration - 10;
+                }
+				
+                current_data = data;
+                paintUpdate.postUpdate();
+                return next_video_time - fduration;
             }
         }.start();
         
         player.play();
         
 		new Thread(){
+			//long audio_render_value = 0;  
 			void run()override{
-            
+                            
+                Timer updateTimer = new Timer();
 				setName("Audio Display");
-                long aabstime = _system_.currentTimeMillis();
-                long render_duration = 0;
-                
+                if (bhasVideo == false){
+                    updateTimer.schedule(new TimerTask(){
+						void run()override{
+							paintUpdate.postUpdate();
+                        }
+                    }, 20, -1);
+				}
 				while (bStop == false){
 					Frame audioFrame = nilptr;
 
 					synchronized(audio_framelist){
-						while (audio_framelist.size() == 0 && bStop == false){
+						while ((audio_framelist.size() == 0 || bpause == true) && bStop == false){
 							audio_framelist.wait();
                         }
 						if ((bclear == false) && audio_framelist.size() > 0){
@@ -393,40 +657,70 @@ class XVideoSurface : QXWidget{
 						break;
 					}
                     if (audioFrame != nilptr && (bclear == false)){
-						//用音频来修正视频的时间
-                       
-						long cms = _system_.currentTimeMillis();
-                        long rendertime = aabstime + render_duration - 20;
-                        
-                        long delay = rendertime - cms;
-                        
-						if (bhasVideo){
-							//渲染时间 - 现在的真实时间
-							correct_ms = rendertime - audioFrame.timemillis;
-						}
-                        
-                        if (delay > 0){
-							sleep(delay);
-                        }else
-                        if (delay < 0){
-							aabstime = cms;
-                            render_duration = 0;
-                        }
-                        
-                        render_duration += bytes2ms(audioFrame.data.length,44100,16,2);
-                        
-						player.write(audioFrame.data,audioFrame.data.length);
-                        
-                        if (ppl != nilptr && bhasVideo == false){
-							ppl.onProgress(audioFrame.timemillis, duration);
+						long render_time = audiowrite(audioFrame.adata,audioFrame.adata.length * 2);
+                        audio_render_value = render_time - audioFrame.timemillis;
+                        if (bhasVideo == false){
+							current_millis = audioFrame.timemillis;
+							onProgress(current_millis);
                         }
                     }
                 }
                 
+                if (updateTimer != nilptr){
+					updateTimer.cancel();
+                }
                 synchronized(audio_framelist){
 					audio_framelist.notifyAll();
                 }
             }
+            
+            
+            long audio_starttime = 0;
+            long total_bytes = 0;
+            
+            
+            long audiowrite(short[] data, int flength){
+				long render_time = 0;
+                
+                long cms = _system_.currentTimeMillis();
+                
+                if (bMute){
+					for (int i =0, c = flength / 2; i < c; i ++){
+						data[i] = 0;
+					}
+                }else{
+					for (int i =0, c = flength / 2; i < c; i ++){
+						data[i] *= faZoom;
+					}
+                }
+				if (total_bytes != 0){
+					render_time = audio_starttime + bytes2ms(total_bytes, 44100, 16, 2);
+                    int delay = render_time - cms;
+					if (delay > 0){
+						if (delay > MIN_BUFFER_TIME){
+							sleep(delay - MIN_BUFFER_TIME);
+                        }
+                        total_bytes += flength;
+					}else{
+                        total_bytes = flength;
+						render_time = audio_starttime = cms;
+                    }
+                }else{
+					total_bytes = flength;
+					render_time = audio_starttime = cms;
+                }
+                				
+                player.write(data, flength);
+                
+                if (bhasVideo == false){
+					EfficDrawer efer = effarr[efficer];
+                    if (efer != nilptr){
+						efer.writeData(data, flength / 2, render_time);
+                    }
+                }
+                return render_time;
+            }
         }.start();
+       
      }
 };

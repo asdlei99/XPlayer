@@ -8,11 +8,11 @@ class MediaBuffer : AVCodeC.IPlayerCallback{
     long bufferMillis = 0;
     
     bool bStop = true;
-    
+
     //注意防止duration太小造成问题
     static const int 
 		MIN_BUFFER = 1500, //最小缓存时间
-		MAX_BUFFER = 10000;	//最大缓存时间
+		MAX_BUFFER = 5000;	//最大缓存时间
     
 	class MediaFrame{
 		MediaFrame(byte[] d, long t, bool b){
@@ -20,7 +20,13 @@ class MediaBuffer : AVCodeC.IPlayerCallback{
             timemillis = t;
             bVideo = b;
         }
-        
+ 		MediaFrame(short[] d, long t, bool b){
+			adata = d;
+            timemillis = t;
+            bVideo = b;
+        }
+               
+        short [] adata;
 		byte[] data;
         long timemillis;
         bool bVideo;
@@ -29,7 +35,8 @@ class MediaBuffer : AVCodeC.IPlayerCallback{
     List<MediaFrame> mList = new List<MediaFrame>();
     
     bool bStarted = false;
-    
+
+
     void config(long bufferms, AVCodeC.IPlayerCallback _p){
 		bufferMillis = bufferms;
         _player = _p;
@@ -103,9 +110,9 @@ class MediaBuffer : AVCodeC.IPlayerCallback{
         }
 	}
     
-	void writeAudioData(byte [] data, int length, long timemillis){
+	void writeAudioData(short [] data, int length, long timemillis){
     
-		byte[] s_buffer = new byte[length];
+		short[] s_buffer = new short[length];
 		_system_.arrayCopy(data,0,s_buffer,0,length);
 
 		synchronized(mList){
@@ -155,6 +162,7 @@ class MediaBuffer : AVCodeC.IPlayerCallback{
 		return false;
     }
     
+
     bool run(){
 		new Thread(){
 			void run()override{
@@ -187,7 +195,7 @@ class MediaBuffer : AVCodeC.IPlayerCallback{
 						if (mf.bVideo){
 							_player.writeVideoData(mf.data, mf.data.length, mf.timemillis);
 						}else{
-							_player.writeAudioData(mf.data, mf.data.length, mf.timemillis);
+							_player.writeAudioData(mf.adata, mf.adata.length, mf.timemillis);
 						}
                     }
 				}

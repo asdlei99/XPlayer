@@ -1,0 +1,40 @@
+//xlang Source, Name:EfficDrawer.xcsm 
+//Date: Thu Apr 23:57:24 2019 
+
+class EfficDrawer{ 
+	short [] efficdata = new short[655350];//3000是20毫秒
+    long timemillstart = 0;
+    int datalen = 0;
+    
+    void reset(){
+		timemillstart = 0;
+        datalen = 0;
+    }
+    
+    int ms2bytes(long million_second){
+        return ((44100 * 16 * 2 * million_second) / (8 * 1000));
+    }
+    
+    long bytes2ms(long data_bytelength, int sample_rate, int bit_wide, int channel){
+		return (data_bytelength * 8 * 1000) / (sample_rate * bit_wide * channel);
+	}
+    
+    void writeData(short []data, int len, long timemillis){
+		efficdata = data;
+    }
+        
+    int getCurrentOffset(int len){
+		if (len < efficdata.length){
+			return 0;
+        }
+        return -1;
+    }
+    
+    short [] getEfficData(){
+		return efficdata;
+    }
+    
+    bool create(); 
+    void drawWave(QXPainter c, int w, int h);
+    void prepare();
+};

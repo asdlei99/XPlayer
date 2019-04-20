@@ -1,0 +1,66 @@
+//xlang Source, Name:LinesDrawwe.xcsm 
+//Date: Fri Apr 02:20:19 2019 
+
+
+class LinesDrawwe : EfficDrawer{
+	
+    int [] curpts = new int[60];
+    
+    Vector<int []> hispts = new Vector<int []>();
+    QXPainter.Paint linepaint = new QXPainter.Paint();
+	bool create() override {
+		//TODO:	
+        linepaint.setStyle(QXPainter.Paint.STROKE);
+        linepaint.setColor(0xffffffff);
+        linepaint.setStrokeWidth(0.5f);
+
+		return true;
+	}
+
+	void prepare() override {
+		//TODO:	
+	
+	}
+
+	void drawWave(QXPainter c, int w, int h) override {
+		short [] data = getEfficData();
+        int offset = getCurrentOffset(curpts.length);
+        if (offset < 0){
+			return ;
+        }
+        int datalen = data.length;
+        
+        if (hispts.size() > 40){
+			hispts.remove(0);
+        }
+        
+
+        c.setRenderHint(QXPainter.RenderHint.Antialiasing,true);
+        
+        
+        for (int i =0, hc = hispts.size(); i < hc; i++){
+			linepaint.setAlpha( 255.f * i / hispts.size());
+			c.setPaint(linepaint);
+			c.drawLines(hispts.get(i));
+        }
+        
+        linepaint.setAlpha(255);
+		c.setPaint(linepaint);
+        for (int i = 0; i < 60; i += 2){
+            double newtop = 0;
+            curpts[i] = ((double)w) * i / 30.f;
+            if (offset != -1 && (offset + i) >= 0 && (offset + i < datalen)){
+                curpts[i + 1] = (((double)(data[offset + i] / 32768.f) + 1) * h) / 2.f;
+            }else{
+				curpts[i + 1] = h / 2;
+            }
+        }
+        
+        c.drawLines(curpts);
+        hispts.add(curpts);
+        curpts = new int[60];
+        
+	}
+
+
+};

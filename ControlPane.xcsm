@@ -12,7 +12,7 @@ class ControlPane : QXWidget{
     AVCodeC playcontroller ;
 	QXImage img = new QXImage(imgbuffer, "png");
     QXImage imgpos = new QXImage(posbuffer, "png");
-    
+     
     QXLabel label = new QXLabel();
     QXWidget previewWidget = new QXWidget();
     
@@ -130,11 +130,11 @@ class ControlPane : QXWidget{
 					if (preview != nilptr){
 						paint.drawImage(preview,new QXRect(0, 0, previewWidget.width(), previewWidget.height()),new QXRect(0, 0, w, h),QXPainter.CompositionMode.CompositionMode_Source);
 					}else{
-						paint.fillRect(0,0,previewWidget.width(),previewWidget.height(), 0xff000000, QXPainter.BrushStyle.SolidPattern);
+						paint.fillRect(0,0,previewWidget.width(),previewWidget.height(), 0xff000000, QXBrush.Style.SolidPattern);
                         paint.drawText("正在加载...", 0, 10 ,txtpt);
                     }
                 }else{
-					paint.fillRect(0,0,previewWidget.width(),previewWidget.height(), 0xff000000, QXPainter.BrushStyle.SolidPattern);
+					paint.fillRect(0,0,previewWidget.width(),previewWidget.height(), 0xff000000, QXBrush.Style.SolidPattern);
 					paint.drawText("正在加载...", 0, 10 ,txtpt);
 				}
 			}

@@ -1,7 +1,7 @@
 //xlang Source, Name:AudioOut.xcsm 
 //Date: Tue Jan 01:39:26 2019 
 
-class AudioOut : Library{
+class AudioOut : Library{  
     long handle = 0;
     static bool loaded = false;
     static bool load(){
@@ -29,7 +29,7 @@ class AudioOut : Library{
         return handle != 0;
     }
     
-    int write(byte [] data, int size){
+    int write(short [] data, int size){
         return audio_writeData(handle, data, size);
     }
     

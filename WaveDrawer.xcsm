@@ -1,0 +1,70 @@
+//xlang Source, Name:WaveDrawer.xcsm 
+//Date: Thu Apr 23:59:09 2019 
+
+class WaveDrawer : EfficDrawer{
+    QXImage waimg = nilptr;
+    double bottom = 345.f;
+    double []wavetop = new double[50];
+    QXRect imgrect;
+    WaveDrawer(){
+    }
+    
+    bool create(){
+		if (waimg == nilptr){
+			try{
+				String appPath = _system_.getAppDirectory();
+				String wave_item = appPath.appendPath("res/wave_item.png");
+				waimg = new QXImage(wave_item, nilptr); 
+                imgrect =  new QXRect(0, 0, waimg.width(), waimg.height());
+			}catch(Exception e){
+				return false;
+			}
+        }
+        return true;
+    }
+        
+    void drawWave(QXPainter c, int w, int h/*, QXWidget 编译器BUG 一直提示这个是抽象的*/)override{
+		//double w = widget.width(), h = widget.height();
+        if (waimg == nilptr){
+			return;
+        }
+        for (int i = 0; i < wavetop.length; i++){
+			int x = 1 + (w * i / 50), y = (1.f - wavetop[i]) * h;
+            QXRect rf = new QXRect(x, y,  x + (w / 50) , y + h  * wavetop[i]);
+            c.drawImage(waimg, rf, imgrect, QXPainter.CompositionMode.CompositionMode_SourceOver);
+        }
+    }
+    
+    void prepare(){
+		short [] data = getEfficData();
+        int offset = getCurrentOffset(wavetop.length);
+        if (offset < 0){
+			return ;
+        }
+        int datalen = data.length;
+        
+        for (int i = 0; i < wavetop.length; i++){
+            double newtop = 0;
+            if (offset != -1 && (offset + i) > 0 && (offset + i < datalen)){
+                newtop = Math.abs((double)(data[offset + i]) / 32768.f);
+                if (newtop == 0){
+					newtop = 0;
+                }
+                if (newtop > wavetop[i]){
+					wavetop[i] = newtop;
+                }else
+                if (wavetop[i] > 0.03){
+					wavetop[i] -= 0.022;
+				}else{
+					wavetop[i] = 0;
+				}
+            }else
+            if (wavetop[i] > 0.03){
+                wavetop[i] -= 0.022;
+            }else{
+				wavetop[i] = 0;
+            }
+
+        }
+    }   
+};

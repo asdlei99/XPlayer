@@ -1,21 +1,20 @@
 // xlang
 
 using {
-	FileStream ; 
+	FileStream ;  
     FileSystem ;
 };
 
 class MainDialog : QXDialog{
-
 	QXPushButton btnOk, btnLeft, btnRight, btnHide, btnStop, btnSetting;
-    QXLabel labStatus;
+    QXLabel labStatus, vlabel;
 	XVideoSurface surface = new XVideoSurface();
 	Setting setdlg = new Setting();
-    
+    QXProgressBar volume = new QXProgressBar();
     MediaBuffer mb = new MediaBuffer();
-    
+              
 	AVCodeC codec = new AVCodeC(mb);
-    
+        
     ControlPane pane = new ControlPane();
 	//wdgControl
     QXTreeView treeWidget;
@@ -27,24 +26,210 @@ class MainDialog : QXDialog{
     bool bStop = true;
     
     QXWidget  qcontrol;
-        
-	onKeyEventListener keylistener = new onKeyEventListener(){
+    
+    static class ContextMenu{
+		QXMenu contextMenu = new QXMenu();
+		QXAction [] actions;
+		
+		void create(QXWidget parent, String [] acts, onEventListener listener){
+			if (contextMenu.create(parent)){
+				actions = new QXAction[acts.length];
+				for (int i = 0; i < acts.length; i ++){
+					QXAction action = new QXAction();
+					if (action.create(contextMenu)){
+						
+						if (acts[i].equals("-")){
+							action.setSeparator(true);
+						}else{	
+                            if (acts[i].startWith("*")){
+								action.setText(acts[i].substring(1, acts[i].length()));
+                                action.setCheckable(true);
+                            }else{
+								action.setText(acts[i]);
+                            }
+							
+							action.setOnEventListener(listener);
+						}
+					}
+					actions[i] = action;
+				}
+				parent.setContextMenuPolicy(ActionsContextMenu);
+				parent.addActions(actions);
+			}
+		}
+	};
+    
+   
     
     
+    class SubCanvas : QXWidget{
     
-		bool onKeyPress(QXObject obj,int key,bool repeat,int count,String text,int scanCode,int virtualKey)override{
-			if (key == Key_Left){
-				codec.seek(mb.getPosition() - 5000);
-            }else
-			if (key == Key_Right){
-				codec.seek(mb.getPosition() + 5000);
-            }else
-            if (key == Key_Space){
-				if (obj == btnOk || obj == btnLeft || obj == btnRight){
-					return true;
+		bool onKeyPress(int key,bool repeat,int count,String text,int scanCode,int virtualKey,int modifier)override{
+			keyPress(this, key, modifier);	
+            return true;
+		}
+
+		bool onClose()override{
+			hide();
+            surface.restoreCanvas(this);
+            return false;
+		}
+    };
+    
+    class VideoContextMenu : onEventListener{
+		   String lastfile = "";
+           
+           ContextMenu _contextMenu = new ContextMenu();
+           
+           void create(QXWidget parent, String [] acts){
+				_contextMenu.create(parent,acts,this);
+           }
+           
+		   void onTrigger(QXObject obj) override{
+				if (obj == _contextMenu.actions[0]){
+					String file = QXFileDialog.getOpenFileName("打开媒体文件",lastfile,"*.*",MainDialog.this);
+                    if (file != nilptr && file.length() > 0){
+						lastfile = file;
+						openMedia(file, file.findFilenameAndExtension());
+                    }
+                    return ;
                 }
-            }
-			return true;
+                
+                if (obj == _contextMenu.actions[1]){
+					openForDialog();
+                    return ;
+                }
+                if (obj == _contextMenu.actions[4]){
+					dostop();
+                    return ;
+                }
+                if (obj == _contextMenu.actions[3]){
+					dopause();
+                    return ;
+                }
+                
+                if (obj == _contextMenu.actions[5]){
+					surface.rotate(90);
+                    return ;
+                }
+                
+                if (obj == _contextMenu.actions[7]){
+					doFullScreen();
+                }
+                
+                if (obj == _contextMenu.actions[9]){
+					bool bc = ((QXAction)obj).getChecked();
+                    checkMenu(10, false);
+                    checkMenu(9, bc);
+					setRenderSetting(bc ? 1 : 0);
+                }
+                
+                if (obj == _contextMenu.actions[10]){
+					bool bc = ((QXAction)obj).getChecked();
+                    checkMenu(10, bc);
+                    checkMenu(9, false);
+					setRenderSetting(bc ? 2 : 0);
+                }
+                
+                if (_contextMenu.actions.length > 11){
+					if (obj == _contextMenu.actions[11]){
+						fullWidget.hide();
+						surface.restoreCanvas(fullWidget);
+					}
+                }
+		   }
+	};
+        
+        
+    void checkMenu(int n, bool b){
+        mainMenu._contextMenu.actions[n].setChecked(b);
+        
+        if (fullWidget != nilptr){
+			fullwidMenu._contextMenu.actions[n].setChecked(b);
+        }
+    }
+    
+    VideoContextMenu mainMenu, fullwidMenu;
+    
+    void createContextMenu(QXWidget window){
+		mainMenu= new VideoContextMenu();
+        String []acts = {"打开文件", "打开网络地址", "-", "暂停/播放", "停止", "画面旋转90°", "-", "全屏", "-", "*保持画面比例", "*原始画面尺寸"};
+        mainMenu.create(window, acts);
+    }
+    
+    void createSurfaceContextMenu(QXWidget window){
+		fullwidMenu = new VideoContextMenu();
+        String []acts = {"打开文件", "打开网络地址", "-", "暂停/播放", "停止", "画面旋转90°", "-", "全屏", "-", "*保持画面比例", "*原始画面尺寸", "退出全屏"};
+        fullwidMenu.create(window, acts);
+        
+        //全屏画面的菜单 禁用掉全屏功能
+        fullwidMenu._contextMenu.actions[7].setEnable(false);
+        
+        //同步勾选状态
+        fullwidMenu._contextMenu.actions[9].setChecked(mainMenu._contextMenu.actions[9].getChecked());
+        fullwidMenu._contextMenu.actions[10].setChecked(mainMenu._contextMenu.actions[10].getChecked());
+    }
+    
+    SubCanvas fullWidget = nilptr;
+    void doFullScreen(){
+		if (fullWidget == nilptr){
+			fullWidget = new SubCanvas();
+			fullWidget.setOnMouseEventListener(volumelis);
+			fullWidget.create();
+            createSurfaceContextMenu(fullWidget);
+		}
+		//fullWidget.show();
+		
+		
+		surface.switchCanvas(fullWidget);
+		fullWidget.showFullScreen();
+		return ;
+    }
+    
+	bool onKeyPress(int key,bool repeat,int count,String text,int scanCode,int virtualKey,int modifier)override{
+		return keyPress(this, key, modifier);	
+	}
+        
+    bool keyPress(QXObject obj, int key, int modifier){
+		if (modifier == NoModifier){
+			switch(key){
+				case Key_Left:
+				codec.seek(mb.getPosition() - 5000);
+				break;
+				case Key_Right:
+				codec.seek(mb.getPosition() + 5000);
+				break;
+				case Key_Space:
+				dopause();
+				break;
+				case QXWidget.Key_Escape:
+                if (obj == fullWidget){
+					fullWidget.hide();
+					surface.restoreCanvas(fullWidget);
+                }else{
+					return false;
+                }
+				break;
+				case Key_MediaTogglePlayPause:
+					dopause();
+				break;
+			}
+        }else
+        if (modifier == AltModifier){
+			switch(key){
+				case Key_Enter:
+				case Key_Return:
+					doFullScreen();
+				break;
+			}
+        }
+        return true;
+    }
+    
+    
+	onKeyEventListener keylistener = new onKeyEventListener(){
+		bool onKeyPress(QXObject obj,int key,bool repeat,int count,String text,int scanCode,int virtualKey,int modifier)override{
+			return keyPress(obj, key, modifier);
 		}
     };
     
@@ -65,13 +250,13 @@ class MainDialog : QXDialog{
             
             long root = treeWidget.addItem(nilptr,"节目表");
             
-            for (int i =0; i < list.length(); i++){
+            for (int i =0, c = list.length(); i < c; i++){
 				JsonObject item = (JsonObject)list.get(i);
                 long hitem = treeWidget.insertItem(root,nilptr,item.getString("name"));
                 
                 JsonArray jcontent = (JsonArray)item.get("content");
                 
-                for (int x = 0; x < jcontent.length(); x++){
+                for (int x = 0, jc = jcontent.length(); x < jc; x++){
 					JsonObject act = (JsonObject)jcontent.get(x);
 					long hsub = treeWidget.insertItem(hitem,nilptr,act.getString("label"));
                     urisMap.put(hsub, act.getString("uri"));
@@ -114,14 +299,26 @@ class MainDialog : QXDialog{
 		surface.setRenderSetting(n);
     }
     
+    
+	void onReject()override{
+		return ;
+	}
+
+
     bool onClose()override{
 		dostop();
         return true;
     }
     
+    void dopause(){
+		bool b = surface.isPaused();
+		surface.setPause(!b);
+		btnOk.setCheck(!b);
+    }
+    
     void dostop(){
 		if (bStop == false){
-			
+			labStatus.show();
 			synchronized(MainDialog.this){
 				bStop = true;
 				labStatus.setText("正在停止...");
@@ -137,9 +334,91 @@ class MainDialog : QXDialog{
 			}
 			
 			labStatus.setText("已停止");
+            setWindowTitle("XPlayer");
 			pane.setPosition(0);
 		}    
     }
+    
+    onMouseEventListener volumelis = new onMouseEventListener(){
+		
+		bool bdown = false;
+		
+		void onWheel(QXObject obj,int button,int x,int y,int Orientation,int delta,bool inverted)override{
+			double fzoom = surface.getVolumeZoom();
+			if (delta > 0){
+				fzoom += 0.01;
+			}else{
+				fzoom -= 0.01;
+			}
+			fzoom = Math.min(1.5f,Math.max(0.f,fzoom));
+			volume.setValue(fzoom * 100);
+			surface.setVolumeZoom(fzoom);
+			if (fzoom >= 1.01f){
+				vlabel.setText(String.format("<a style=\"color:#ff0000\">音量:%d %%</a>", (int)(fzoom * 100)));
+			}else{
+				vlabel.setText(String.format("音量:%d %%", (int)(fzoom * 100)));
+			}
+			volume.update();
+		}
+
+
+		void onMouseMove(QXObject obj,int Button,int x,int y,int flags,int source)override{
+			if (obj != volume){
+				return ;
+            }
+			if (bdown){
+				double fzoom = (double)x / (double)volume.width();
+				fzoom = Math.min(1.5f,Math.max(0.f,fzoom));
+				volume.setValue(fzoom * 100);
+				surface.setVolumeZoom(fzoom);
+			if (fzoom >= 1.01f){
+				vlabel.setText(String.format("<a style=\"color:#ff0000\">音量:%d %%</a>", (int)(fzoom * 100)));
+			}else{
+				vlabel.setText(String.format("音量:%d %%", (int)(fzoom * 100)));
+			}
+				volume.update();
+			}
+		}
+
+
+		void onMouseButtonRelease(QXObject obj,int Button,int x,int y,int flags,int source)override{
+			if (obj != volume){
+				return ;
+            }
+			double fzoom = (double)x / (double)volume.width();
+			fzoom = Math.min(1.5f,Math.max(0.f,fzoom));
+			volume.setValue(fzoom * 100);
+			bdown = false;
+			surface.setVolumeZoom(fzoom);
+			if (fzoom >= 1.01f){
+				vlabel.setText(String.format("<a style=\"color:#ff0000\">音量:%d %%</a>", (int)(fzoom * 100)));
+			}else{
+				vlabel.setText(String.format("音量:%d %%", (int)(fzoom * 100)));
+			}
+			volume.update();
+		}
+
+
+		void onMouseButtonPress(QXObject obj,int Button,int x,int y,int flags,int source)override{
+			if (obj != volume){
+				if (obj == surface.paintUpdate){
+					if (Button == 1){
+						surface.switch_efficer();
+                    }else{
+						showContextMenu();
+                    }
+                }
+				return ;
+            }
+			bdown = true;
+		}
+	};
+	
+    
+    void showContextMenu(){
+    
+    }
+    
     
 	bool create()override{
 		QXBuffer qb = new QXBuffer();
@@ -158,7 +437,8 @@ class MainDialog : QXDialog{
             btnHide = (QXPushButton)attachByName(new QXPushButton(), "btnHide");
             treeWidget = (QXTreeView)attachByName(new QXTreeView(), "treeWidget");
             labStatus = (QXLabel)attachByName(new QXLabel(), "labStatus");
-
+            vlabel = (QXLabel)attachByName(new QXLabel(), "vlabel");
+			volume = (QXProgressBar)attachByName(volume, "volume");
             qcontrol = (QXWidget)attachByName(new QXWidget(), "qcontrol"); 
             //widTitle = (QXWidget)attachByName(new QXWidget(), "widTitle");
             
@@ -168,6 +448,7 @@ class MainDialog : QXDialog{
             attachByName(pane, "wdgControl");
             treeWidget.hide();
             pane.init();
+            
             
             /*surface.create(this);
                         
@@ -179,15 +460,36 @@ class MainDialog : QXDialog{
             btnOk.setOnKeyEventListener(keylistener);
             btnLeft.setOnKeyEventListener(keylistener);
             btnRight.setOnKeyEventListener(keylistener);
+            btnStop.setOnKeyEventListener(keylistener);
+            btnSetting.setOnKeyEventListener(keylistener);
             surface.setOnKeyEventListener(keylistener);
             
             mb.config(1500, surface.getPlayer());
             
+            volume.setOnMouseEventListener(volumelis);
+            surface.setOnMouseEventListener(volumelis);
+
+			
+            treeWidget.setOnKeyEventListener(new onKeyEventListener(){
+            	bool onKeyPress(QXObject obj,int key,bool repeat,int count,String text,int scanCode,int virtualKey,int modifier)override{
+					if (key == Key_Escape){
+						return false;
+                    }
+                    return true;
+				}
+            });
 			btnOk.setOnClickListener(new onClickListener(){
 				void onClick(QXObject obj, bool checked)override{
-					String file = new String("http://cctvtxyh5c.liveplay.myqcloud.com/wstv/liaoning_2/index.m3u8".getBytes("GB18030"));
+					//String file = new String("http://cctvtxyh5c.liveplay.myqcloud.com/wstv/liaoning_2/index.m3u8".getBytes("GB18030"));
                     //setWindowTitle("D:\\Cadaqs\\Desktop\\7500-航班2014.hd.rmvb，http://cctvalih5c.v.myalicdn.com/live/cctv1_1/index.m3u8");
-					openMedia(file);
+					//openMedia(file);
+                    dopause();
+                    /*if (b){
+						btnOk.setCheck(!b);
+						btnOk.setStyleSheetString("image: url(res/toolbar/play.png);");
+                    }else{
+						btnOk.setStyleSheetString("image: url(res/toolbar/pause.png);");
+                    }*/
 				}
 			});
             
@@ -232,24 +534,17 @@ class MainDialog : QXDialog{
             
             surface.setDragListener( new XVideoSurface.DropListener(){
 				void onDrag(String file){
-					openMedia(file);
+					openMedia(file, file.findFilenameAndExtension());
 				}
 			});
-            
-            /*new Timer().schedule(new TimerTask(){
-				void run()override{
-					pane.setPosition(codec.getPosition());
-                }
-            },1000,-1);*/
-            
-            
+                        
             treeWidget.setOnTreeViewItemEvent(new onTreeViewItemEvent(){
-               void onItemDoubleClicked(QXTreeView,long item, int column)override{
+               void onItemDoubleClicked(QXTreeView tree,long item, int column)override{
 					try{
 						String url = urisMap.get(item);
                         
                         url = url.replace("%(tempstamp)", "" + (_system_.currentTimeMillis() / 1000));
-                        openMedia(url);
+                        openMedia(url, tree.getItemText(item, 0));
                     }catch(Exception e){
                     
                     }
@@ -263,13 +558,37 @@ class MainDialog : QXDialog{
             setdlg.create(this);
             setdlg.hide();
             labStatus.setText("就绪");
+            this.setFocus();
+            createContextMenu(surface);
             return true;
 		}
         return false;
 	}
 
 
-    
+    void openForDialog(){
+		InputDialog.requestInput(new InputDialog.onInputListener(){
+			bool onInputOk(String text)override{
+				if (text == nilptr || text.length() == 0){
+					return false;
+				}
+				openMedia(text, text);
+				return true;
+			}
+			bool onInputCancel()override{
+				return true;
+			}
+			String getTitle()override{
+				return "打开网络地址";
+			}
+			String getTips()override{
+				return "媒体地址:";  
+			} 
+			String getDefault()override{
+				return "http://";
+			}
+		});      
+    }
 
     
     void setStatus(int s){
@@ -277,7 +596,7 @@ class MainDialog : QXDialog{
 			void run()override{
             
 				switch(s){
-					case 0:
+					case 0: 
 					case -1:
                     labStatus.setText("加载失败");
                     break;
@@ -291,8 +610,14 @@ class MainDialog : QXDialog{
 			}
 		});
     }
-    void openMedia(String uri){
+    
+    void openMedia(String uri, String title){
+		dostop();
 		if (bStop == true){
+			labStatus.show();
+            if (title != nilptr){
+				setWindowTitle("XPlayer - " + title);
+            }
 			new Thread(){
 				void run()override{
 					bStop = false;
@@ -301,14 +626,31 @@ class MainDialog : QXDialog{
 					
 					if (codec.open(uri)){
 					
-						mb.create();
+						mb.create(); 
 						//surface.resize(codec.getWidth(),codec.getHeight());
 						long duration = codec.getDuration();
 						szduration = formatTime(duration);
                         
 						if (codec.prepare()){
 							pane.config(uri, duration, codec);
-							surface.setParameter(codec.getFps(),duration , codec.getWidth(),codec.getHeight(), codec.hasAudio(), codec.hasVideo(), playStatusListener);
+                            bool ba = codec.hasAudio();
+                            bool bv = codec.hasVideo();
+                            
+							runOnUi(new Runnable(){
+								void run()override{
+									if (bv == false){
+										labStatus.hide();
+                                        /*volume.resize(30,15);
+                                        MainDialog.this.resize(300,150);*/
+									}else{
+										labStatus.show();
+                                        //MainDialog.this.resize(480,320);
+									}
+                                    
+								}
+							});
+						
+							surface.setParameter(codec.getFps(),duration , codec.getWidth(),codec.getHeight(), ba, bv, playStatusListener);
 							surface.startPlay();
 							setStatus(2);
 							codec.decode();
@@ -317,27 +659,35 @@ class MainDialog : QXDialog{
 						bStop = true;
 						setStatus(0);
 					}
-                    
-                    synchronized(MainDialog.this){
+                     
+                    synchronized(MainDialog.this){ 
 						MainDialog.this.notify();
-                    }
-				}
+                    }  
+				} 
 			}.start();
         }
     }
-};
+}; 
 
 
 class XMyApp : QXApplication {
-
+ 
 	MainDialog dialog;
-	
-
-    bool create(){
+	String fileargs;
+	void preopen(String file){
+		fileargs = (file);
+    }
+                 
+    bool create(){                         
         if (super.createQXApplication()){
             dialog = new MainDialog();
             if (dialog.create()){
-				setStyleSheet("./res/qss/black.qss");
+				String qsspath = XPlatform.getAppDirectory();
+                qsspath = String.formatPath(qsspath.appendPath("/res/qss/black.qss"), false);
+				setStyleSheet(qsspath);
+                if (fileargs != nilptr && fileargs.length() > 0){
+					dialog.openMedia(fileargs, fileargs);
+                }
 				dialog.show();
                 return true;
             }
@@ -347,9 +697,13 @@ class XMyApp : QXApplication {
     
 };
 
-
+    
 int main(String [] args){
 	XMyApp app = new XMyApp();
+    _system_.chdir(_system_.getAppDirectory());
+	if (args.length > 1){
+		app.preopen(XPlatform.converPlatformCharSetTo(args[1]));
+	}
     if (app.create()){
 		app.run();
     }

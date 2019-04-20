@@ -1,9 +1,9 @@
 {
-	"FileVersion":	"1.0.0.0",
-	"ProductVersion":	"1.0.0.0",
 	"ProductName":	"XPlayer",
 	"InternalName":	"XPlayer.exe",
 	"CompanyName":	"XStudio",
 	"LegalCopyright":	"Copyright (C) 2018 X-Studio",
-	"FileDescription":	"XPlayer"
+	"FileDescription":	"XPlayer",
+	"FileVersion":	"1.0.0.544",
+	"ProductVersion":	"1.0.0.544"
 }

@@ -1,0 +1,80 @@
+//xlang Source, Name:InputDlg.xcsm 
+//Date: Sun Apr 20:53:45 2019 
+
+class InputDialog : QXDialog { 
+
+	interface onInputListener{
+		bool onInputOk(String text);
+        bool onInputCancel();
+        String getTitle();
+        String getTips();
+        String getDefault();
+    };
+    
+    onInputListener listener;
+	InputDialog(onInputListener intputlis){
+		listener = intputlis;
+    }
+
+    QXPushButton btnSubmit, btnCancel;
+    QXLineEdit edtLine; 
+
+    void onAttach()override{ 
+    
+        setWindowFlags(CustomizeWindowHint | WindowCloseButtonHint);
+        setWindowIcon("./res/toolbar/logo.png");
+        setFixedSize(width(), height());
+        
+        btnSubmit = (QXPushButton)attachByName(new QXPushButton(), "btnSubmit");
+        btnCancel = (QXPushButton)attachByName(new QXPushButton(), "btnCancel");
+        
+        edtLine = (QXLineEdit)attachByName(new QXLineEdit(), "edtLine");
+        QXLabel label = (QXLabel)attachByName(new QXLabel(), "label");
+        
+        edtLine.setText(listener.getDefault());
+        
+        btnSubmit.setOnClickListener(
+        new onClickListener(){
+            void onClick(QXObject obj, bool checked)override{
+				String text = edtLine.getText();
+                if (listener.onInputOk(text)){
+					close();
+                }                
+            }
+        });
+        
+        btnCancel.setOnClickListener(
+        new onClickListener(){
+            void onClick(QXObject obj, bool checked)override{
+                if (listener.onInputCancel()){
+					close();
+                }
+            }
+        });
+        
+        label.setText(listener.getTips());
+        
+		setWindowTitle(listener.getTitle());
+        
+        setModal(true);
+        
+        show();
+        edtLine.setFocus();
+    }
+    
+    static byte [] dlg_buffer = __xPackageResource("ui/goto.ui");
+    
+    static void requestInput(onInputListener lis){
+		QXDialog newDlg = new QXDialog();
+        QXBuffer qb = new QXBuffer();
+        
+        qb.setBuffer(dlg_buffer, 0, dlg_buffer.length);
+        
+        if (newDlg.load(qb) == false){
+            return ;
+        }
+        InputDialog wizard = new InputDialog(lis);	
+        
+        wizard.attach(newDlg);
+    }
+};

@@ -96,6 +96,9 @@ border: 1px solid #333333;
           <height>90</height>
          </size>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="toolTip">
          <string>显示左侧栏</string>
         </property>
@@ -155,7 +158,7 @@ border: 1px solid #333333;
        <number>4</number>
       </property>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,0,0,0,0,0">
+       <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,0,0,0,0,0,0,0">
         <property name="spacing">
          <number>0</number>
         </property>
@@ -170,12 +173,65 @@ border: 1px solid #333333;
          <widget class="QWidget" name="widget_2" native="true"/>
         </item>
         <item>
+         <widget class="QProgressBar" name="volume">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="value">
+           <number>100</number>
+          </property>
+          <property name="textVisible">
+           <bool>false</bool>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="invertedAppearance">
+           <bool>false</bool>
+          </property>
+          <property name="textDirection">
+           <enum>QProgressBar::TopToBottom</enum>
+          </property>
+          <property name="format">
+           <string>%p%</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="vlabel">
+          <property name="minimumSize">
+           <size>
+            <width>80</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>80</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>音量100%</string>
+          </property>
+          <property name="margin">
+           <number>2</number>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="btnLeft">
           <property name="maximumSize">
            <size>
             <width>32</width>
             <height>24</height>
            </size>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::StrongFocus</enum>
           </property>
           <property name="toolTip">
            <string>后退5秒</string>
@@ -214,6 +270,9 @@ border: 1px solid #333333;
           </property>
           <property name="text">
            <string/>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
           </property>
          </widget>
         </item>

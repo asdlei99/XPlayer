@@ -2,9 +2,9 @@
 //Date: Sun Jan 21:35:17 2019 
 
 class AVCodeC : Library{
-	interface IPlayerCallback{
+	interface IPlayerCallback{ 
 		void writeVideoData(byte [] data, int length, long timemillis);
-        void writeAudioData(byte [] data, int length, long timemillis);
+        void writeAudioData(short [] data, int length, long timemillis);
         void stop();
         bool create();
         bool seek(long pos);
@@ -150,7 +150,7 @@ class AVCodeC : Library{
         
 			long []lengths = new long[2];
 			byte [] video_data = new byte[getVideoBufferSize(hMedia)];
-            byte [] audio_data = new byte[getAudioBufferSize(hMedia)];
+            short [] audio_data = new short[getAudioBufferSize(hMedia) / 2];
             
             int nSeek = 0;
             
@@ -175,7 +175,7 @@ class AVCodeC : Library{
 									_player.writeVideoData(video_data, lengths[0], lengths[1]);
 								}else
 								if (flags == 2){
-									_player.writeAudioData(audio_data, lengths[0], lengths[1]);
+									_player.writeAudioData(audio_data, lengths[0] / 2, lengths[1]);
 								}
 							}
 							
@@ -242,14 +242,23 @@ class AVCodeC : Library{
     }
     
     int getFps(){
+    	if (hMedia == 0){
+			return 0;
+        }
 		return getVideoFps(hMedia);
     }
     
     int getWidth(){
+    	if (hMedia == 0){
+			return 0;
+        }
 		return getVideoWidth(hMedia);
     }
     
     int getHeight(){
+		if (hMedia == 0){
+			return 0;
+        }
 		return getVideoHeight(hMedia);
     }
     
@@ -257,10 +266,16 @@ class AVCodeC : Library{
 		return bReady;
     }
     long getDuration(){
-		return getDuration(hMedia);
+		if (hMedia != 0){
+			return getDuration(hMedia);
+        }
+        return 0;
     }
     
     bool seek(long position){
+		if (hMedia == 0){
+			return false;
+        }
 		if (position < 0){
 			position = 0;
         }

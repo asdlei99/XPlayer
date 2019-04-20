@@ -1,7 +1,7 @@
 //xlang Source, Name:Setting.xcsm 
 //Date: Mon Feb 17:16:38 2019 
 
-class Setting : QXDialog{
+class Setting : QXDialog{ 
 	QXLabel qxtitle = new QXLabel();
     
     QXLabel txt1 = new QXLabel(), txt2 = new QXLabel();

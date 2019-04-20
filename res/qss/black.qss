@@ -236,13 +236,12 @@ QMenu::separator {
  
 QProgressBar {
     text-align: center;
+    color: #dfdfdf;
     border: 1px solid #404041;
     background: #333334;
 }
  
 QProgressBar::chunk {
-    width: 5px; 
-    margin: 1px;
     background-color: #4D4D4D;
 }
  
@@ -499,7 +498,9 @@ QStatusBar::item {
 #btnOk{ 
     image: url(res/toolbar/play.png);
 }
-
+#btnOk:checked{ 
+    image: url(res/toolbar/pause.png);
+}
 #btnStop:hover{ 
     image: url(res/toolbar/stop-l.png);
 }

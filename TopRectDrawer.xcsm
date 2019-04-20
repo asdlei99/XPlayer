@@ -1,0 +1,69 @@
+//xlang Source, Name:TopRectDrawer.xcsm 
+//Date: Sat Apr 00:43:11 2019 
+
+class TopRectDrawer : EfficDrawer{
+
+    static const int WIDTH_COUNT = 30,
+					 HWIGHT_COUNT = 20;
+                     
+    double [] tops  = new double[WIDTH_COUNT];
+
+	bool create() override {
+
+		return true;
+	}
+
+	void prepare() override {
+		//TODO:	
+	
+	}
+
+	void drawWave(QXPainter c, int w, int h) override {
+		short [] data = getEfficData();
+        int offset = getCurrentOffset(WIDTH_COUNT);
+        if (offset < 0){
+			return ;
+        }
+       
+        c.setRenderHint(QXPainter.RenderHint.Antialiasing,true);
+ 
+        //linepaint.setAlpha(255);
+		
+        double ocx = w / (WIDTH_COUNT - 1);
+        double ocy = h / (HWIGHT_COUNT - 1);
+        
+        int cx = ocx - 2;
+        int cy = ocy - 2;
+
+		double step = 1.f / HWIGHT_COUNT;
+        for (int x = 0; x < WIDTH_COUNT; x ++){
+ 			if (tops[x] > 0.02){
+				tops[x] -= 0.017;
+			}else{
+				tops[x] = 0;
+			}
+            double rp = Math.abs(data[offset + x] / 32768.f);
+            double rv = (1.f - rp) * h;
+            
+            if (rp > tops[x]){
+				tops[x] = rp;
+            }
+            
+            int topid = (1 - tops[x]) / step;
+            
+            for (int y = 0; y < HWIGHT_COUNT; y++){
+				double t = h / HWIGHT_COUNT * y;
+                if (y == topid){
+					c.fillRect(x * ocx + 1, y * ocy + 1,cx,cy, 0xffefefef, QXBrush.Style.SolidPattern);
+                }else
+                if (t > rv){	
+					c.fillRect(x * ocx + 1, y * ocy + 1,cx,cy, 0x9fefefef, QXBrush.Style.SolidPattern);
+                }else{
+					c.fillRect(x * ocx + 1, y * ocy + 1,cx,cy, 0x20ffffff, QXBrush.Style.SolidPattern);
+                }
+            }
+
+        }
+	}
+
+};

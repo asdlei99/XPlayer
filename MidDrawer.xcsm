@@ -1,0 +1,45 @@
+//xlang Source, Name:MidDrawer.xcsm 
+//Date: Sat Apr 01:14:10 2019 
+
+class MidDrawer : EfficDrawer{
+	double []values = new double[30];
+    
+	bool create() override {
+		return true;
+	
+	}
+
+	void prepare() override {
+	} 
+
+	void drawWave(QXPainter c, int w, int h) override {
+		short [] data = getEfficData();
+        int offset = getCurrentOffset(values.length);
+        if (offset < 0){
+			return ;
+        }
+        
+		double ocx = w / 28;
+        
+		for (int x = 0; x < 30; x ++){
+			if (values[x] > 0.02){
+				values[x] -= 0.017;
+			}else{
+				values[x] = 0;
+			}
+
+			double rp = Math.abs(data[offset + x] / 32768.f);
+			if (values[x] < rp){
+				values[x] = rp;
+            }
+            
+            int vh = values[x] * h;
+            int top = (h - vh) / 2;
+            int vw = (w / 30) - 2;
+            c.fillRect(ocx * x + 1, top, vw, vh,  0xffefefef, QXBrush.Style.SolidPattern);
+		}
+	
+	}
+
+
+};

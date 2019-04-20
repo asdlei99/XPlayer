@@ -1,0 +1,125 @@
+//xlang Source, Name:CircleDrawer.xcsm 
+//Date: Sat Apr 16:46:32 2019 
+
+class CircleDrawer : EfficDrawer{
+
+    static const int WIDTH_COUNT = 12, MAX_COUNT = 50,  R_MAX = 32;
+     
+    QXPainter.Paint cpaint = new QXPainter.Paint();  
+
+    double gxo = 0, gyo = 0, gro = 0;
+	double maxoffset = 20;
+    double max_offset = 0;
+    bool acc = true;
+    
+    class Circle{
+		Circle(int _x, int _y, int cor, double rv){
+			x = _x;
+            y = _y;
+            color = cor;
+            r = rv;
+        }
+		int x, y;
+        double xo = 0, yo = 0, ro = 0;
+        int color;
+        double r;
+        
+        void apply(){
+			x += (xo + gxo);  
+            y += (yo + gyo); 
+            r += gro;
+        }
+    };
+    
+    Vector<Circle> circles = new Vector<Circle>();
+
+	bool create() override { 
+
+		return true;
+	}
+
+	void reset(){
+		circles.clear();
+        super.reset();
+    }
+    
+	void prepare() override {
+		//TODO:	
+	
+	}
+
+	void drawWave(QXPainter c, int w, int h) override {
+		short [] data = getEfficData();
+        int offset = getCurrentOffset(WIDTH_COUNT);
+        if (offset < 0){
+			return ;
+        }
+        
+        if (acc){
+			gxo *= 1.01f;
+			gyo *= 1.01f;
+            gro *= 1.01f;
+            if (Math.abs(gxo) > maxoffset && Math.abs(gyo)  > maxoffset){
+				acc = false;
+            }
+        }else{
+			gxo *= 0.99f;
+			gyo *= 0.99f;
+            gro *= 0.99f;
+        }     
+        //linepaint.setAlpha(255);
+		double rv = 0;
+        for (int x = 0; x < WIDTH_COUNT; x ++){
+            rv += Math.abs(data[offset + x] / 32768.f);
+        }
+        
+        rv = (rv / WIDTH_COUNT) * R_MAX;
+        if ((rv /WIDTH_COUNT) > max_offset){
+			max_offset = (rv /WIDTH_COUNT);
+        }else
+        if (max_offset > 0.4){
+			max_offset -= 0.02;
+        }
+        {
+			Circle cr = new Circle(Math.random() * w, Math.random() * h, Math.random() * 0x00ffffff, rv);
+			cr.xo = (Math.random() - 0.5f) * 2;
+			cr.yo = (Math.random() - 0.5f ) * 2;
+			cr.ro = (-Math.random()) * 3;
+			
+			circles.add(cr);
+        }
+        c.setRenderHint(QXPainter.RenderHint.Antialiasing,true);
+        
+        /*c.setBrush(grandbrush);
+        c.drawRect(0,0,w,h);*/
+        cpaint.setStyle(QXPainter.Paint.FILL_AND_STROKE);
+        
+        
+        int cc = circles.size();
+        for (int i = 0; i < cc; i++){
+			Circle cr = circles.get(i);
+            int alpha =  i * 5;
+            if (alpha > 0 && cr.r > 0){
+				cpaint.setColor(((alpha & 0xff)<< 24) | (cr.color & 0xffffff));
+				c.drawCircle(cr.x,cr.y,cr.r,cpaint);
+				cr.apply();
+            }
+        }
+        
+        int removetop = cc - MAX_COUNT;
+        
+        for (int i = 0; i < removetop; i ++){
+			circles.remove(0);
+        }
+        
+        if (Math.abs(gxo) < 0.5 || Math.abs(gyo) < 0.5){                
+			double ov = max_offset * 4;
+            maxoffset = ov * 2;
+			gxo = (Math.random() - 0.5f) * ov;
+			gyo = (Math.random() - 0.5f) * ov;
+            gro = (Math.random() - 0.5f) * ov / 10.f;
+			acc = true;
+        }
+	}
+
+};
