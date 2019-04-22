@@ -40,7 +40,7 @@ void CALLBACK AudioPlayer::waveOutProc(
 bool AudioPlayer::create(int channel, int sample, int bits,int millionSecBuffered){
 
 	if (channel == 0){
-		if (::waveOutOpen(0, 0, &m_waveformat, 0, 0, WAVE_FORMAT_QUERY)){
+		if (::waveOutOpen(0, 0, &m_waveformat, 0, 0, WAVE_FORMAT_QUERY)){ 
 			return false;
 		}
 	}else{

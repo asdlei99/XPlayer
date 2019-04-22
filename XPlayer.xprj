@@ -18,19 +18,19 @@
 				"makeclean":	"clean",
 				"afterbuild":	"",
 				"afterclean":	"",
-				"wtype":	"",
-				"ostype":	"",
-				"outname":	"$(ProjectName)$(Ext)",
-				"outpath":	"$(ProjectDir)/$(Arch)/$(Configure)",
-				"command":	"-ce",
-				"uaclevel":	"默认",
-				"libs":	["XPlatform1.0.0.0.lix", "FileSystem1.0.0.0.lix", "FileStream1.0.0.0.lix", "Qt5.9.15.9.1.3.lix"],
 				"ignorewarning":	"-w",
 				"debugable":	"-dbg",
 				"debugdatabase":	"",
 				"cmd":	"$(Output)",
 				"args":	"$(Output)",
-				"workdir":	"$(ProjectDir)"
+				"workdir":	"$(ProjectDir)",
+				"libs":	["XPlatform1.0.0.0.lix", "FileSystem1.0.0.0.lix", "FileStream1.0.0.0.lix", "Qt5.9.1_5.9.1.4.lix"],
+				"wtype":	"-arch:x86_64",
+				"ostype":	"",
+				"outname":	"$(ProjectName)$(Ext)",
+				"outpath":	"$(ProjectDir)/$(Arch)/$(Configure)",
+				"command":	"-ce",
+				"uaclevel":	"默认"
 			},
 			"release":	{
 				"path":	{
@@ -48,7 +48,7 @@
 				"workdir":	"$(ProjectDir)"
 			}
 		},
-		"icofile":	"64x64.ico",
-		"versioninc":	"1"
+		"versioninc":	"1",
+		"icofile":	"64x64.ico"
 	}
 }

@@ -613,6 +613,7 @@ class MainDialog : QXDialog{
     
     void openMedia(String uri, String title){
 		dostop();
+        
 		if (bStop == true){
 			labStatus.show();
             if (title != nilptr){
@@ -664,7 +665,7 @@ class MainDialog : QXDialog{
 						MainDialog.this.notify();
                     }  
 				} 
-			}.start();
+			}.start();  
         }
     }
 }; 
